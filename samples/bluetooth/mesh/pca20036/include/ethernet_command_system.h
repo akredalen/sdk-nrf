@@ -41,6 +41,13 @@ struct __attribute((packed)) ethernet_led_package {
 	uint8_t target_mac[6];
 };
 
+struct __attribute((packed)) mesh_package {
+	bool is_broadcast;
+	uint8_t opcode;
+	uint64_t data;
+	uint8_t tx_power;
+};
+
 struct __attribute((packed)) command_system_package {
 	uint32_t identifier;
 	uint8_t opcode;
