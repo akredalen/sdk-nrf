@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DFU_APP_VERSION 1
+#define DFU_APP_VERSION 2 // Version 2: txp sample
 
 void ethernet_dfu_start(uint8_t *server_ip);
 

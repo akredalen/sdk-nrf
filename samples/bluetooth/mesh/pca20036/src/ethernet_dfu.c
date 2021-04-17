@@ -25,7 +25,7 @@
 
 static const struct device *flash_dev;
 
-static struct k_delayed_work led_blinking_work;
+static struct k_delayed_work txp_work;
 static struct k_delayed_work tftp_work;
 
 static uint8_t tftp_rcv_buf[MAX_MTU_SIZE];
@@ -33,7 +33,7 @@ static uint8_t tftp_rcv_buf[MAX_MTU_SIZE];
 static uint32_t bytes_written = 0;
 static bool save_data_successful = true;
 
-static void led_blinking_work_handler(struct k_work *work)
+static void txp_work_handler(struct k_work *work)
 {
 	static bool led_on = false;
 
@@ -45,22 +45,22 @@ static void led_blinking_work_handler(struct k_work *work)
 		led_on = true;
 	}
 
-	k_delayed_work_submit(&led_blinking_work, K_MSEC(1000));
+	k_delayed_work_submit(&txp_work, K_MSEC(1000));
 }
 
-static void led_blinking_work_init(void)
+static void txp_work_init(void)
 {
-	k_delayed_work_init(&led_blinking_work, led_blinking_work_handler);
+	k_delayed_work_init(&txp_work, txp_work_handler);
 }
 
-static void led_blinking_work_start(void)
+static void txp_work_start(void)
 {
-	k_delayed_work_submit(&led_blinking_work, K_NO_WAIT);
+	k_delayed_work_submit(&txp_work, K_NO_WAIT);
 }
 
-static void led_blinking_work_stop(void)
+static void txp_work_stop(void)
 {
-	k_delayed_work_cancel(&led_blinking_work);
+	k_delayed_work_cancel(&txp_work);
 }
 
 static void tftp_work_handler(struct k_work *work)
@@ -84,7 +84,7 @@ static void tftp_work_handler(struct k_work *work)
 		if (ret == 2 && save_data_successful == true) {
 			printk("TFTP finished successfully\n");
 
-			led_blinking_work_stop();
+			txp_work_stop();
 			hp_led_off();
 
 			err = boot_request_upgrade(BOOT_UPGRADE_TEST);
@@ -96,7 +96,7 @@ static void tftp_work_handler(struct k_work *work)
 			}
 		} else {
 			printk("TFTP DFU operation failed\n");
-			led_blinking_work_stop();
+			txp_work_stop();
 			hp_led_off();
 			tick = 0;
 		}
@@ -207,7 +207,7 @@ void ethernet_dfu_start(uint8_t *server_ip)
 
 		printk("Starting DFU\n");
 
-		led_blinking_work_start();
+		txp_work_start();
 
 		// Allowing the logging to output messages before the erasing starts
 		k_sleep(K_MSEC(3000));
@@ -241,5 +241,5 @@ void ethernet_dfu_confirm_image(void)
 void ethernet_dfu_init(void)
 {
 	flash_init();
-	led_blinking_work_init();
+	txp_work_init();
 }
