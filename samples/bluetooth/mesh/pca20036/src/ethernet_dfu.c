@@ -46,19 +46,21 @@ static void txp_work_handler(struct k_work *work)
 	}
 
 	k_delayed_work_submit(&txp_work, K_MSEC(1000));
+	// added delay to let the ethernet_dfu_start continue...
+	// is signaled to stop when dfu is finished
 }
 
-static void txp_work_init(void)
+static void txp_work_init(void) // init work queue
 {
 	k_delayed_work_init(&txp_work, txp_work_handler);
 }
 
-static void txp_work_start(void)
+static void txp_work_start(void) // signal
 {
 	k_delayed_work_submit(&txp_work, K_NO_WAIT);
 }
 
-static void txp_work_stop(void)
+static void txp_work_stop(void) // signal
 {
 	k_delayed_work_cancel(&txp_work);
 }
@@ -83,10 +85,10 @@ static void tftp_work_handler(struct k_work *work)
 	} else {
 		if (ret == 2 && save_data_successful == true) {
 			printk("TFTP finished successfully\n");
-
+		
 			txp_work_stop();
 			hp_led_off();
-
+			
 			err = boot_request_upgrade(BOOT_UPGRADE_TEST);
 
 			if (err) {
@@ -207,6 +209,7 @@ void ethernet_dfu_start(uint8_t *server_ip)
 
 		printk("Starting DFU\n");
 
+		// Signals txp_work_handler()
 		txp_work_start();
 
 		// Allowing the logging to output messages before the erasing starts

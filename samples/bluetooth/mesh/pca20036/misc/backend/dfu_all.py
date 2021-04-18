@@ -14,8 +14,7 @@ on = bytearray([0x01])
 off = bytearray([0x00])
 target_mac = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
 target_mac.reverse()
-tx_power = bytearray([0x04])
 
-package_dfu = identifier + opcode + dummy_mac + is_broadcast + target_mac + tx_power
+package_dfu = identifier + opcode + dummy_mac + is_broadcast + target_mac
 
 sock.sendto(bytearray(package_dfu), ('255.255.255.255', UDP_PORT))

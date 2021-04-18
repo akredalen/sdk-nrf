@@ -60,6 +60,7 @@ void ethernet_command_system_rx(void)
 			if (identifier == 0xDEADFACE) {
 				memcpy(&received_package, received_data,
 				       sizeof(received_package));
+				// void * memcpy ( void * destination, const void * source, size_t num );
 
 				switch (received_package.opcode) {
 				case CMD_RESET:
@@ -75,7 +76,7 @@ void ethernet_command_system_rx(void)
 						NVIC_SystemReset();
 					}
 					break;
-				case CMD_DFU:
+				case CMD_DFU: ///////////////////////
 					if (received_package.payload.dfu_package
 						    .is_broadcast ||
 					    mac_addresses_are_equal(

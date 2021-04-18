@@ -32,7 +32,11 @@ static void ethernet_rx_work_handler(struct k_work *work)
 static void ethernet_rx_work_init_start(void)
 {
 	k_delayed_work_init(&ethernet_rx_work, ethernet_rx_work_handler);
+	// Initialize a delayed work item, 
+	// with a handler function to invoke each time work item is processed
+
 	k_delayed_work_submit(&ethernet_rx_work, K_NO_WAIT);
+	// Submits a delayed work item to the system workqueue of this type
 }
 
 void main(void)
