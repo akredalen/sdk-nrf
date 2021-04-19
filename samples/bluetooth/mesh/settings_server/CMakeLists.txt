@@ -12,8 +12,25 @@ project(NONE)
 target_sources(app PRIVATE
 	src/main.c
 	src/model_handler.c
-	src/settings_srv.c)
-target_include_directories(app PRIVATE include)
+	src/settings_srv.c
+	src/pca20036_dfu/pca20036_ethernet.c
+	src/pca20036_dfu/ethernet_dfu.c
+	src/pca20036_dfu/ethernet_command_system.c
+	src/pca20036_dfu/ethernet_utils.c
+	src/pca20036_dfu/hp_led.c
+	../../../../../modules/hal/wiznet/Callback/dhcp_cb.c
+	../../../../../modules/hal/wiznet/Ethernet/W5500/w5500.c
+	../../../../../modules/hal/wiznet/Ethernet/socket.c
+	../../../../../modules/hal/wiznet/Ethernet/wizchip_conf.c
+	../../../../../modules/hal/wiznet/Internet/DHCP/dhcp.c
+	../../../../../modules/hal/wiznet/Internet/TFTP/tftp.c
+	../../../../../modules/hal/wiznet/Internet/TFTP/netutil.c)
+target_include_directories(app PRIVATE include
+	../../../../../modules/hal/wiznet/Callback
+	../../../../../modules/hal/wiznet/Ethernet
+	../../../../../modules/hal/wiznet/Ethernet/W5500
+	../../../../../modules/hal/wiznet/Internet/DHCP
+	../../../../../modules/hal/wiznet/Internet/TFTP)
 
 zephyr_library_include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}
