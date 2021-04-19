@@ -106,6 +106,32 @@ void ethernet_command_system_rx(void)
 						}
 					}
 					break;
+				case CMD_TXP: // SA
+					if (received_package.payload.txp_package
+						    .is_broadcast ||
+					    mac_addresses_are_equal(
+						    own_mac,
+						    received_package.payload
+							    .txp_package
+							    .target_mac)) {
+						if (received_package.payload
+							    .txp_package
+							    .tx_power == 4) {
+							printk("TXP: TX Power is set to 4 dB\n");
+							hci_set_tx_power(0, 0, 4); // BT_HCI_VS_LL_HANDLE_TYPE_ADV = 0
+
+						} else if (received_package.payload
+							    .txp_package
+							    .tx_power == 0) {
+							printk("TXP: TX Power is set to 0 dB\n");
+							hci_set_tx_power(0, 0, 0);
+							
+						} else {
+							printk("TXP: TX Power is set to -40 dB\n");
+							hci_set_tx_power(0, 0, -40);
+						}
+					}
+					break;
 				default:
 					printk("CMD: Unrecognized control command: %d\n",
 					       received_package.opcode);

@@ -20,6 +20,8 @@ extern "C" {
 
 const struct bt_mesh_comp *model_handler_init(void);
 
+void hci_set_tx_power(uint8_t handle_type, uint16_t handle, uint8_t txp_lvl);
+
 #ifdef __cplusplus
 }
 #endif

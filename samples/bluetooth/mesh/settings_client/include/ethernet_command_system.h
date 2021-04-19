@@ -17,7 +17,7 @@ enum ethernet_ctrl_cmd {
 	CMD_I_AM_ALIVE = 0x02,
 	CMD_DFU = 0x03,
 	CMD_LED = 0x04,
-	CMD_MESH = 0x05, // SA
+	CMD_TXP = 0x05, // SA
 };
 
 struct __attribute((packed)) ethernet_reset_package {
@@ -34,7 +34,6 @@ struct __attribute((packed)) ethernet_i_am_alive_package {
 struct __attribute((packed)) ethernet_dfu_package {
 	bool is_broadcast;
 	uint8_t target_mac[6];
-	int8_t tx_power;
 };
 
 struct __attribute((packed)) ethernet_led_package {
@@ -43,12 +42,11 @@ struct __attribute((packed)) ethernet_led_package {
 	uint8_t target_mac[6];
 };
 
-// struct __attribute((packed)) ethernet_mesh_package { // SA
-// 	bool is_broadcast;
-// 	uint8_t opcode;
-// 	uint64_t data;
-// 	uint8_t tx_power;
-// };
+struct __attribute((packed)) ethernet_txp_package { // SA
+	bool is_broadcast;
+	int8_t tx_power;
+	uint8_t target_mac[6];
+};
 
 struct __attribute((packed)) command_system_package {
 	uint32_t identifier;
@@ -59,7 +57,7 @@ struct __attribute((packed)) command_system_package {
 		struct ethernet_i_am_alive_package i_am_alive_package;
 		struct ethernet_dfu_package dfu_package;
 		struct ethernet_led_package led_package;
-		// struct ethernet_mesh_package mesh_package; // SA
+		struct ethernet_txp_package txp_package; // SA
 	} payload;
 };
 

@@ -12,11 +12,11 @@ target_sources(app PRIVATE
 	src/main.c
 	src/model_handler.c
 	src/settings_cli.c
-	src/pca20036_ethernet.c
-	src/ethernet_dfu.c
-	src/ethernet_command_system.c
-	src/ethernet_utils.c
-	src/hp_led.c
+	src/pca20036_dfu/pca20036_ethernet.c
+	src/pca20036_dfu/ethernet_dfu.c
+	src/pca20036_dfu/ethernet_command_system.c
+	src/pca20036_dfu/ethernet_utils.c
+	src/pca20036_dfu/hp_led.c
 	../../../../../modules/hal/wiznet/Callback/dhcp_cb.c
 	../../../../../modules/hal/wiznet/Ethernet/W5500/w5500.c
 	../../../../../modules/hal/wiznet/Ethernet/socket.c

@@ -80,7 +80,7 @@ void main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
 
-	// printk("- PCA20036 sample -\n");
+	printk("- Settings sample for PCA20036 -\n");
 	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
 
 	err = hp_led_init();

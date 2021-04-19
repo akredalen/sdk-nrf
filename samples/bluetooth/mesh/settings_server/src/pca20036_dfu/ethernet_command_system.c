@@ -13,6 +13,7 @@
 #include "ethernet_utils.h"
 #include "hp_led.h"
 #include "ethernet_dfu.h"
+#include "model_handler.h"
 
 static struct k_delayed_work i_am_alive_work;
 
@@ -103,6 +104,32 @@ void ethernet_command_system_rx(void)
 						} else {
 							printk("CMD: HP LED OFF\n");
 							hp_led_off();
+						}
+					}
+					break;
+				case CMD_TXP: // SA
+					if (received_package.payload.txp_package
+						    .is_broadcast ||
+					    mac_addresses_are_equal(
+						    own_mac,
+						    received_package.payload
+							    .txp_package
+							    .target_mac)) {
+						if (received_package.payload
+							    .txp_package
+							    .tx_power == 4) {
+							printk("TXP: TX Power is set to 4 dB\n");
+							hci_set_tx_power(0, 0, 4); // BT_HCI_VS_LL_HANDLE_TYPE_ADV = 0
+
+						} else if (received_package.payload
+							    .txp_package
+							    .tx_power == 0) {
+							printk("TXP: TX Power is set to 0 dB\n");
+							hci_set_tx_power(0, 0, 0);
+							
+						} else {
+							printk("TXP: TX Power is set to -40 dB\n");
+							hci_set_tx_power(0, 0, -40);
 						}
 					}
 					break;

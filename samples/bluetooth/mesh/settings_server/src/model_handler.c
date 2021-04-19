@@ -42,7 +42,7 @@ static struct bt_conn *default_conn;
 
 
 /** TX POWER Functions. Source: zephyr/samples/bluetooth/hci_pwr_ctrl/src/main.c*/
-static void hci_set_tx_power(uint8_t handle_type, uint16_t handle, uint8_t txp_lvl)
+void hci_set_tx_power(uint8_t handle_type, uint16_t handle, uint8_t txp_lvl)
 {
 	struct bt_hci_cp_vs_write_tx_power_level *cp;
 	struct bt_hci_rp_vs_write_tx_power_level *rp;
