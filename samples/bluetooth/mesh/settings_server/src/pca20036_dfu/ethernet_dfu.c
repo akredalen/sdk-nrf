@@ -35,15 +35,15 @@ static bool save_data_successful = true;
 
 static void txp_work_handler(struct k_work *work)
 {
-	static bool led_on = false;
+	// static bool led_on = false;
 
-	if (led_on) {
-		hp_led_off();
-		led_on = false;
-	} else {
-		hp_led_on();
-		led_on = true;
-	}
+	// if (led_on) {
+	// 	hp_led_off();
+	// 	led_on = false;
+	// } else {
+	// 	hp_led_on();
+	// 	led_on = true;
+	// }
 
 	k_delayed_work_submit(&txp_work, K_MSEC(1000));
 	// added delay to let the ethernet_dfu_start continue...

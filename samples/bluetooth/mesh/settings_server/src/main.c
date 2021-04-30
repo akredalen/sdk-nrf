@@ -31,11 +31,8 @@ static void ethernet_rx_work_handler(struct k_work *work)
 static void ethernet_rx_work_init_start(void)
 {
 	k_delayed_work_init(&ethernet_rx_work, ethernet_rx_work_handler);
-	// Initialize a delayed work item, 
-	// with a handler function to invoke each time work item is processed
 
 	k_delayed_work_submit(&ethernet_rx_work, K_NO_WAIT);
-	// Submits a delayed work item to the system workqueue of this type
 }
 
 /////////////////////////////// MESH INIT ///////////////////////////////
@@ -67,7 +64,7 @@ static void bt_ready(int err)
 	/* This will be a no-op if settings_load() loaded provisioning info */
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 
-	printk("Mesh initialized\n");
+	printk(" - Mesh initialized -\n");
 }
 
 void main(void)
@@ -84,6 +81,8 @@ void main(void)
 
 	printk("- Settings sample for PCA20036 -\n");
 	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
+
+	// printk("***Some change***\n");
 
 	err = hp_led_init();
 

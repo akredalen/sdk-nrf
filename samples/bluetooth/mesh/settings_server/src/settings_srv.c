@@ -58,7 +58,6 @@ static void settings_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 
 	struct bt_mesh_settings_srv *srv = model->user_data;
 	struct bt_mesh_settings_status status = { 0 };
-	struct bt_mesh_model_transition transition;
 	struct bt_mesh_settings_set set;
 
 	uint8_t msg = net_buf_simple_pull_u8(buf);
