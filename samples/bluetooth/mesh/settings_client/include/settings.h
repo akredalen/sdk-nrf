@@ -35,6 +35,8 @@ extern "C" {
 #define BT_MESH_DEVICE_SETTINGS_STATUS_OP \
 		BT_MESH_MODEL_OP_3(0xC3, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
+#define BT_MESH_DEVICE_SETTINGS_LATENCY_OP \
+		BT_MESH_MODEL_OP_3(0xC4, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
 #define BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET 0 
 #define BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET 1
@@ -42,10 +44,20 @@ extern "C" {
 #define BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_STATUS 1
 #define BT_MESH_DEVICE_SETTINGS_MSG_MAXLEN_STATUS 2
 
+#define BT_MESH_DEVICE_SETTINGS_MSG_LEN_LATENCY 2
+
 /** Mandatory parameters for the Settings Set message. */
 struct bt_mesh_settings_set {
 	/** TX Power to set on server */
 	int8_t txp_value;
+};
+
+/** Mandatory parameters for the Settings Latency message. */
+struct bt_mesh_settings_latency {
+	/** Sequence number of message */
+	uint8_t seq_num;
+	/** MAC address of target node */
+	uint8_t target_mac[6];
 };
 
 /** Parameters for the Settings Status message. */
