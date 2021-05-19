@@ -40,6 +40,7 @@ struct bt_mesh_settings_cli;
 				BT_MESH_DEVICE_SETTINGS_MSG_MAXLEN_SET)) }				\
 	}
 
+
 /** @def BT_MESH_MODEL_SETTINGS_CLI
  *
  * @brief Device Settings Client model composition data entry.

@@ -68,6 +68,21 @@ struct bt_mesh_settings_status {
     int8_t present_txp;
 };
 
+// MOVE THIS!
+/** @def BT_MESH_SETTINGS_CLI_TEST_INIT
+ *
+ * @brief Initialization parameters for a bt_mesh_settings_cli test instance.
+ *
+ * @param[in] _status_handler Latency response message handler.
+ */
+#define BT_MESH_SETTINGS_CLI_TEST_INIT(_status_handler)						\
+	{																	\
+		.latency_resp_handler = _latency_resp_handler,								\
+		.pub = {.msg = NET_BUF_SIMPLE(BT_MESH_MODEL_BUF_LEN(			\
+				BT_MESH_DEVICE_SETTINGS_LATENCY_OP,							\
+				BT_MESH_DEVICE_SETTINGS_MSG_LEN_LATENCY)) }				\
+	}
+
 #ifdef __cplusplus
 }
 #endif
