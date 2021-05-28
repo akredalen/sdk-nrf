@@ -65,6 +65,8 @@ void main(void)
 
 	ethernet_rx_work_init_start();
 
+	// start_latency_test();
+
 	printk("- Initiated -\n");
 
 	/* DHCP may not be leased yet - check flag */
