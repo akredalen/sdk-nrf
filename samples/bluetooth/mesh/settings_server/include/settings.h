@@ -37,7 +37,10 @@ extern "C" {
 #define BT_MESH_DEVICE_SETTINGS_STATUS_OP \
 		BT_MESH_MODEL_OP_3(0xC3, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
-#define BT_MESH_DEVICE_SETTINGS_LATENCY_OP \
+#define BT_MESH_LATENCY_OUTBOUND_OP \
+		BT_MESH_MODEL_OP_3(0xC4, BT_MESH_NORDIC_SEMI_COMPANY_ID)
+
+#define BT_MESH_LATENCY_INBOUND_OP \
 		BT_MESH_MODEL_OP_3(0xC4, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
 
@@ -47,7 +50,8 @@ extern "C" {
 #define BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_STATUS 1
 #define BT_MESH_DEVICE_SETTINGS_MSG_MAXLEN_STATUS 2
 
-#define BT_MESH_DEVICE_SETTINGS_MSG_LEN_LATENCY 1
+#define BT_MESH_LATENCY_MSG_LEN_OUTBOUND 1
+#define BT_MESH_LATENCY_MSG_LEN_INBOUND 1
 
 /** Mandatory parameters for the Settings Set message. */
 struct bt_mesh_settings_set {
@@ -78,7 +82,7 @@ struct bt_mesh_settings_status {
  */
 #define BT_MESH_SETTINGS_TEST_INIT(_status_handler)						\
 	{																	\
-		.latency_resp_handler = _latency_resp_handler,								\
+		.handle_latency_resp = _handle_latency_resp,								\
 		.pub = {.msg = NET_BUF_SIMPLE(BT_MESH_MODEL_BUF_LEN(			\
 				BT_MESH_DEVICE_SETTINGS_LATENCY_OP,							\
 				BT_MESH_DEVICE_SETTINGS_MSG_LEN_LATENCY)) }				\

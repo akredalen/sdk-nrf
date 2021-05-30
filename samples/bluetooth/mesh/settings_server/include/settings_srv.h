@@ -99,7 +99,39 @@ struct bt_mesh_settings_srv_handlers {
 	void (*const get)(struct bt_mesh_settings_srv *srv,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct bt_mesh_settings_status *rsp);
+
+	/* LATENCY TEST */
+
+	/** @brief Calculate Round-Trip-Time for message.
+	 *
+	 * @note This handler is mandatory.
+	 *
+	 * @param[in] srv Server instance to get the state of.
+	 * @param[in] ctx Message context for the message that triggered the
+	 * change, or NULL if the change is not coming from a message.
+	 * @param[out] rsp Response structure to be filled.
+	 */
+	void (*const latency_in)(struct bt_mesh_settings_srv *srv,
+			  struct bt_mesh_msg_ctx *ctx);
+
+	/** @brief Respond to Outbound Latency Message
+	 *
+	 * @note This handler is mandatory.
+	 *
+	 * @param[in] srv Server instance to get the state of.
+	 * @param[in] ctx Message context for the message that triggered the
+	 * change, or NULL if the change is not coming from a message.
+	 * @param[out] rsp Response structure to be filled.
+	 */
+	void (*const latency_out)(struct bt_mesh_settings_srv *srv,
+			  struct bt_mesh_msg_ctx *ctx);
 };
+
+void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf);
+
+void handle_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf);
 
 #ifdef __cplusplus
 }

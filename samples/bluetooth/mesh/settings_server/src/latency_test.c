@@ -1,5 +1,3 @@
-// move to model_handler? 
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -8,6 +6,8 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include "settings.h"
+#include "settings_srv.h"
+#include "latency_test.h"
 #include "pca20036_ethernet.h" // get_own_ utils
 #include "ethernet_utils.h" // _are_equal utils
 #include "../../../../zephyr/subsys/bluetooth/mesh/prov.h"
@@ -39,120 +39,56 @@ for (all addresses) {
 
 */
 
-///////////////////////// DRAFT OF TEST IMPLM ////////////////////////
 
-#define MSG_AMOUNT 50
-#define NODES_TOTAL 2
+/* TEST NODE */
 
-static uint8_t transmitt_value = 3;
-
-static uint8_t own_mac[6];
-
-static uint8_t mac_addr_test_node[6] = {0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43};
-static uint16_t app_idx; // needed?
-static uint16_t addr;
-
-static struct Node_data{
-    uint8_t mac_address[6];
-    uint8_t ttl;
-};
-
-/* Hard-coded TTL values for each MAC address */
-static struct Node_data node_data_mac_ttl[NODES_TOTAL] = {
-    {{0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43}, 1},
-    {{0xDE, 0xAD, 0xFA, 0xCE, 0x00, 0x00}, 2}
-    };
-
-uint8_t target_mac[6];
-int target_ttl;
-
-static struct bt_mesh_settings_cli settings_cli = BT_MESH_SETTINGS_TEST_INIT(&latency_resp_handler);
-
-struct bt_mesh_settings_latency latency_msg;
-
-/* Run Latency test... */
-void start_latency_test (void){
-
-    int err;
-
-    /* Fetch next node address and set TTL (hard coded)*/
-    for (int i = 0; i < NODES_TOTAL; i++){
-            
-            target_mac = node_data_mac_ttl[i].mac_address;
-            target_ttl = node_data_mac_ttl[i].ttl;
-            
-            err = set_unicast_addr(target_mac);
-            if (err) {
-                printk("Error: unvalid unicast address");
-            }
-            err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
-            if (err) {
-                printk("Error: unable to set TTL value");
-            }
-
-            /* Send flood of messages to unicast address */
-            for (int k = 0; k < MSG_AMOUNT; ++k) {
-
-                err = send_latency_test_msg(&settings_cli, &addr, &latency_msg);
-                if (err){
-                    printk("ERROR: latency message nr. %d failed. \n", k);
-                }
-                else{
-                    save_time_stamp();
-                }
-
-                // wait for reply from response handler...
-
-                // logg over ethernet
-                
-            }
-    }
-}
-
-static void save_time_stamp(){
-    
-    int64_t current_uptime = k_uptime_get();
-
-    // save...
-}
-
-static int send_latency_test_msg(struct bt_mesh_settings_cli *cli, uint16_t addr, struct bt_mesh_settings_latency *msg){
+static int latency_send_msg(struct bt_mesh_settings_srv *srv, uint16_t addr, struct bt_mesh_settings_latency *msg){
 
     struct bt_mesh_msg_ctx ctx = {
             .addr = addr,
             //.send_ttl = BT_MESH_TTL_DEFAULT, // needs to be set dynamically during runtime
     };
 
-    BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DEVICE_SETTINGS_LATENCY_OP, BT_MESH_DEVICE_SETTINGS_MSG_LEN_LATENCY);
-    bt_mesh_model_msg_init(&buf, BT_MESH_DEVICE_SETTINGS_LATENCY_OP);
+    BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_LATENCY_OUTBOUND_OP, BT_MESH_LATENCY_MSG_LEN_OUTBOUND);
+    bt_mesh_model_msg_init(&buf, BT_MESH_LATENCY_OUTBOUND_OP);
 
-    // Add sequence number to buffer
-    // net_buf_simple_add_u8(&buf, msg->target_mac);
-    // net_buf_simple_add_u8(&buf, msg->seq_num);
-
-    return bt_mesh_model_send(&cli, &ctx, &buf, NULL, NULL);
-
+    return bt_mesh_model_send(&srv, &ctx, &buf, NULL, NULL);
 }
 
 
-static void handle_latency_resp_msg(struct bt_mesh_model *model,
-                                  struct bt_mesh_msg_ctx *ctx,
-                                  struct net_buf_simple *buf)
+static void handle_latency_inbound_msg(struct bt_mesh_model *model,
+                        struct bt_mesh_msg_ctx *ctx,
+                        struct net_buf_simple *buf)
 {
+    int64_t current_uptime = k_uptime_get();
 
-    if (buf->len != BT_MESH_DEVICE_SETTINGS_MSG_LEN_LATENCY) {
+    if (buf->len != BT_MESH_LATENCY_MSG_LEN_INBOUND) {
 			printk("Error: Buffer length out of scope (handle_latency)");
 		return;
 	}
 
-    int64_t current_uptime = k_uptime_get();
-
-    // .....
+    // ..... continue latency test....
 
 
 }
 
+/* FIELD NODES */
 
+static void handle_latency_outbound_msg(struct bt_mesh_model *model,
+                        struct bt_mesh_msg_ctx *ctx,
+                        struct net_buf_simple *buf)
+{
+    if (buf->len != BT_MESH_LATENCY_MSG_LEN_OUTBOUND) {
+			printk("Error: Buffer length out of scope (handle_latency_outbound)");
+		return;
+
+    /* Immediately reply with an inbound message */
+    BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_LATENCY_INBOUND_OP, BT_MESH_LATENCY_MSG_LEN_INBOUND);
+    bt_mesh_model_msg_init(&buf, BT_MESH_LATENCY_INBOUND_OP);
+
+    return bt_mesh_model_send(model, ctx, &buf, NULL, NULL);
+
+}
 
 /**
  * Returns true if the specified address is an address of the local element.
@@ -170,20 +106,16 @@ static bool address_is_unicast(uint16_t addr)
 	return (addr > 0) && (addr <= 0x7FFF);
 }
 
-static int define_unicast_addr(unit8_t mac_addr){
-    
-    int err;
+static int define_unicast_addr(uint8_t mac_addr){
 
+    uint16_t uni_addr;
     // left shift mac address by two spaces
 
-
-    //err = !(address_is_unicast());
-    return err;
+    return address_is_unicast(uni_addr);
 };
 
-/*  */
 
-static int set_unicast_addr(){
+static int latency_set_unicast_addr(){
     int err;
 
     // left shift mac address by two spaces
@@ -194,13 +126,6 @@ static int set_unicast_addr(){
     return err;
 };
 
-struct bt_mesh_cfg_mod_pub pub = {
-    .addr = addr,
-    .app_idx = app_idx,
-    .ttl = 4,
-    .period = 0,
-}
-
 static int init_node(enum Role role){
 
     int err;
@@ -209,7 +134,7 @@ static int init_node(enum Role role){
         case TESTER_N:
 
             err = bt_mesh_cfg_app_key_add(net_idx, addr, key_net_idx, key_app_idx,
-                            app_key[16], *status);
+                            app_key[16], &status);
 
             if (err) {
                 printk("Failed to add app key");
@@ -232,8 +157,8 @@ static int init_node(enum Role role){
 
         case FIELD_N:
 
-            err = bt_mesh_cfg_app_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx, uint16_t key_app_idx,
-                            const uint8_t app_key[16], uint8_t *status);
+            err = bt_mesh_cfg_app_key_add(net_idx, addr, key_net_idx, key_app_idx,
+                            app_key[16], &status);
 
             if (err) {
                 printk("Failed to add app key");
@@ -266,15 +191,11 @@ static int init_node(enum Role role){
 
 };
 
-/* Role of node in network.
-The TESTER node is responsible for sending messages to and receiving from the other FIELD noed in the network. 
-The TESTER node calculates RRT and logs the results using ethernet.
-Tge FIELD node only responds to incoming messages  */
-static enum Role {TESTER_N, FIELD_N};
-static enum role;
-
 /* Initialize node and set up parameters */
-static void init_latency_test(){
+static int latency_init_test(){
+
+    int err;
+    static enum role = NONE;
 
     get_own_mac(own_mac);
 
@@ -284,7 +205,10 @@ static void init_latency_test(){
     else{
         role = FIELD_N;
     }
-    init_node(role);
+
+    err = init_node(role);
+
+    return err;
 }
 
 /* cfg:

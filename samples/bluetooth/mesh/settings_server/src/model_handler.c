@@ -17,6 +17,10 @@
 #include <sys/printk.h>
 #include <sys/util.h>
 #include <sys/byteorder.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -34,11 +38,22 @@
 
 #include "model_handler.h"
 #include "settings_srv.h"
+#include "latency_test.h"
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 static struct bt_conn *default_conn;
+
+
+/*
+OUTBOUND messages are those who are sent from the TEST node, to the FIELD node.
+INBOUND messages are those who are sent from the FIELD node, back to the TEST node
+RTT is the calculated Round-Trip-Time
+*/
+int64_t outbound_time; 
+int64_t inbound_time;
+int64_t rtt;
 
 
 /** TX POWER Functions. Source: zephyr/samples/bluetooth/hci_pwr_ctrl/src/main.c*/
@@ -170,9 +185,77 @@ static void txp_get(struct bt_mesh_settings_srv *srv, struct bt_mesh_msg_ctx *ct
 	rsp->present_txp = txp_get;
 }
 
+
+////////////////////////////// LATENCY TEST /////////////////////////////////////
+
+/* Triggered by Ethernet Command System */
+void start_latency_test (void){
+
+    int err;
+
+	err = latency_init_test();
+	if (err){
+		printk("Error: Failed to initialize node");
+	}
+
+    /* Fetch next node address and set TTL (hard coded)*/
+    for (int i = 0; i < NODES_TOTAL; i++){
+        
+            memcpy(target_mac, node_data_mac_ttl[i].mac_address, sizeof(target_mac));
+            target_ttl = node_data_mac_ttl[i].ttl;
+            
+            err = latency_set_unicast_addr(target_mac);
+            if (err) {
+                printk("Error: unable to form a valid unicast address");
+            }
+            err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
+            if (err) {
+                printk("Error: unable to set TTL value");
+            }
+
+            /* Send flood of messages to unicast address */
+			struct bt_mesh_settings_latency latency_msg;
+
+            for (int k = 0; k < MSG_AMOUNT; ++k) {
+
+                err = latency_send_msg(&settings_srv, &addr, &latency_msg);
+                if (err){
+                    printk("ERROR: latency message nr. %d failed. \n", k);
+                }
+                else{
+                    outbound_time = k_uptime_get();
+                }
+
+                // wait for reply from inbound handler...then:
+				inbound_time = k_uptime_get();
+				rtt = inbound_time - outbound_time;
+
+                // logg over ethernet...
+                
+            }
+    }
+}
+
+
+////////////////////////////// CONFIG /////////////////////////////////////
+
+
+const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
+    { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
+    { BT_MESH_DEVICE_SETTINGS_SET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET,    handle_set },
+
+	/* LATENCY TEST handlers */
+	{BT_MESH_LATENCY_INBOUND_OP,	BT_MESH_LATENCY_MSG_LEN_INBOUND,	handle_latency_inbound_msg},
+	{BT_MESH_LATENCY_OUTBOUND_OP,	BT_MESH_LATENCY_MSG_LEN_OUTBOUND,	handle_latency_outbound_msg},
+
+    BT_MESH_MODEL_OP_END,
+};
+
 static const struct bt_mesh_settings_srv_handlers settings_handlers = {
 	.set = txp_set,
 	.get = txp_get,
+	.latency_in = handle_latency_inbound_msg,
+	.latency_out = handle_latency_outbound_msg,
 };
 
 static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);

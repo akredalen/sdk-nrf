@@ -31,7 +31,7 @@ static void rsp_status(struct bt_mesh_model *model,
 	(void)bt_mesh_model_send(model, rx_ctx, &msg, NULL, NULL);
 }
 
-static void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	if (buf->len != BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET) {
@@ -83,7 +83,8 @@ respond:
 	}
 }
 
-static void handle_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+/* Gives optional ack */
+void handle_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	settings_set(model, ctx, buf, true);
@@ -118,10 +119,4 @@ static int bt_mesh_settings_srv_init(struct bt_mesh_model *model)
 
 const struct bt_mesh_model_cb _bt_mesh_settings_srv_cb = {
 	.init = bt_mesh_settings_srv_init
-};
-
-const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
-    { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
-    { BT_MESH_DEVICE_SETTINGS_SET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET,    handle_set },
-    BT_MESH_MODEL_OP_END,
 };
