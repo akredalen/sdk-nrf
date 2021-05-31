@@ -34,13 +34,6 @@ static struct Node_data{
     uint8_t ttl;
 };
 
-struct bt_mesh_cfg_mod_pub pub = {
-    .addr = addr,
-    .app_idx = app_idx,
-    .ttl = 4,
-    .period = 0,
-};
-
 /* Hard-coded TTL values for each MAC address */
 static struct Node_data node_data_mac_ttl[NODES_TOTAL] = {
     {{0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43}, 1},

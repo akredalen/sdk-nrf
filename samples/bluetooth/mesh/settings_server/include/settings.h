@@ -59,11 +59,11 @@ struct bt_mesh_settings_set {
 	int8_t txp_value;
 };
 
-/** Mandatory parameters for the Settings Latency message. */
-struct bt_mesh_settings_latency {
-	/** MAC address of target node */
-	uint8_t target_mac[6];
-};
+// /** Mandatory parameters for the Settings Latency message. */
+// struct bt_mesh_settings_latency {
+// 	/** MAC address of target node */
+// 	uint8_t target_mac[6];
+// };
 
 /** Parameters for the Settings Status message. */
 struct bt_mesh_settings_status {

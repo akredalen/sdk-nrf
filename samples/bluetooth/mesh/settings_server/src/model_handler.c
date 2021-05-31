@@ -188,8 +188,11 @@ static void txp_get(struct bt_mesh_settings_srv *srv, struct bt_mesh_msg_ctx *ct
 
 ////////////////////////////// LATENCY TEST /////////////////////////////////////
 
+uint16_t addr = 0xDEADFACE;
+uint16_t  app_idx = 0;
+
 static void latency_test (struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx, struct bt_mesh_settings_latency *msg, enum Test_State test_state){
+			  struct bt_mesh_msg_ctx *ctx, enum Test_State test_state, int64_t time){
 
     switch (test_state){
 
@@ -198,24 +201,19 @@ static void latency_test (struct bt_mesh_settings_srv *srv,
 			int err;
 			int node_count;
 			int msg_count;
-			uint16_t addr;
 
 			err = latency_init_test();
 			if (err){
 				printk("Error: Failed to initialize node");
 			}
 
-			goto case RUN;
-
 		case RUN:
 			/* Fetch next node address and set TTL (hard coded)*/
-			struct bt_mesh_settings_latency latency_msg;
+			
 			for (node_count; node_count < NODES_TOTAL; node_count++){
 			
-				memcpy(target_mac, node_data_mac_ttl[i].mac_address, sizeof(target_mac));
-				target_ttl = node_data_mac_ttl[i].ttl;
-				
-				latency_msg.target_mac = target_mac; 
+				memcpy(target_mac, node_data_mac_ttl[node_count].mac_address, sizeof(target_mac));
+				target_ttl = node_data_mac_ttl[node_count].ttl;
 				
 				addr = latency_get_unicast_addr(target_mac);
 				if (addr == 1){
@@ -227,10 +225,10 @@ static void latency_test (struct bt_mesh_settings_srv *srv,
 					printk("Error: unable to set TTL value");
 				}
 
-				/* Send flood of messages to unicast address */
+				/* Send messages to unicast address */
 				for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
 
-					err = latency_send_msg(&settings_srv, &addr, &latency_msg);
+					err = latency_send_msg(&settings_srv, &addr);
 					if (err){
 						printk("ERROR: latency message nr. %d failed. \n", k);
 					}
@@ -239,27 +237,26 @@ static void latency_test (struct bt_mesh_settings_srv *srv,
 					}
 					break;
 
-					continue_flood:
-					/* continue for-loop for sending the next message */
+					continue_msg_seq:
+					/* continue for-loop for message sequence  */
 					
 				} 
-			}
+			} 
 			return;
 
 		case CONT:
-			inbound_time = k_uptime_get();
+			inbound_time = time;
 			rtt = inbound_time - outbound_time;
 
 			// logg over ethernet...
 
-			goto continue_flood;
+			goto continue_msg_seq;
 	 
     }
 }
 
 
 ////////////////////////////// CONFIG /////////////////////////////////////
-
 
 const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
     { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },

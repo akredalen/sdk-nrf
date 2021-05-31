@@ -13,33 +13,6 @@
 #include "../../../../zephyr/subsys/bluetooth/mesh/prov.h"
 #include "../../../../zephyr/include/bluetooth/mesh/cfg_cli.h"
 
-/* CLIENT:
-
-// on boot: check rolle
-
-// SENDING MESSAGES:
-for (all addresses) {
-    // get address
-    for (i < 50, i++){
-        // save timestamp for outgoing message
-        // send unicast-message
-        // wait for response
-    }
-
-}
-
-// RECEIVING MESSAGES:
-
-    message_handler{
-        // save timestamp
-        // check sequence number
-            // compare timestamps
-            // calculate rrt and save to file
-    }
-
-*/
-
-
 /* TEST NODE */
 
 static int latency_send_msg(struct bt_mesh_settings_srv *srv, uint16_t addr){
@@ -52,7 +25,7 @@ static int latency_send_msg(struct bt_mesh_settings_srv *srv, uint16_t addr){
     BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_LATENCY_OUTBOUND_OP, BT_MESH_LATENCY_MSG_LEN_OUTBOUND);
     bt_mesh_model_msg_init(&buf, BT_MESH_LATENCY_OUTBOUND_OP);
 
-    // net_buf_simple_add_u8(&buf, msg->target_mac[6]); // not necessary
+        /* Message contains only OP code */
 
     return bt_mesh_model_send(&srv, &ctx, &buf, NULL, NULL); // use model_ackd_send instead?
 }
@@ -62,6 +35,7 @@ static void handle_latency_inbound_msg(struct bt_mesh_model *model,
                         struct bt_mesh_msg_ctx *ctx,
                         struct net_buf_simple *buf)
 {
+    /* Get the immediate arrival time of the inbound message */
     int64_t current_uptime = k_uptime_get();
 
     if (buf->len != BT_MESH_LATENCY_MSG_LEN_INBOUND) {
@@ -75,7 +49,7 @@ static void handle_latency_inbound_msg(struct bt_mesh_model *model,
 	// struct bt_mesh_settings_latency uptime = current_uptime;
     static enum Test_State test_state = CONT; 
 
-	srv->handlers->latency_in(srv, ctx, &msg, test_state, current_uptime);
+	srv->handlers->latency_in(srv, ctx, test_state, current_uptime);
 }
 
 /* FIELD NODES */
@@ -94,6 +68,7 @@ static void handle_latency_outbound_msg(struct bt_mesh_model *model,
 
     return bt_mesh_model_send(model, ctx, &buf, NULL, NULL);
 
+    }
 }
 
 
@@ -104,11 +79,12 @@ static uint16_t latency_get_unicast_addr(uint8_t mac_addr[6]){
     // left shift mac address by two spaces
     // addr = ...
 
-    if (!(address_is_unicast()){
-        return 1;}
+    if (!address_is_unicast(addr)){
+        return 1;
+        }
 
     return addr;
-    }
+}
 
 static int init_node(enum Role role){ // UN-DONE!
 

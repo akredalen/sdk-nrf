@@ -109,11 +109,14 @@ struct bt_mesh_settings_srv_handlers {
 	 * @param[in] srv Server instance to get the state of.
 	 * @param[in] ctx Message context for the message that triggered the
 	 * change, or NULL if the change is not coming from a message.
+	 * @param[in] test_state Sets the state of the Latency Test depending
+	 * on if the node wants to initialize the test (INIT), send a message (RUN)
+	 *  or continue its execution after receiving a response message (CONT). 
+	 * @param[in] time The current uptime read upon arrival of the respose message.
 	 */
 	void (*const latency_in)(struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx, 
-			  struct bt_mesh_settings_latency *msg, 
-			  enum Test_State test_state);
+			  struct bt_mesh_msg_ctx *ctx,  
+			  enum Test_State test_state, int64_t time);
 
 	/** @brief Respond to Outbound Latency Message
 	 *
