@@ -23,8 +23,8 @@ static uint8_t own_mac[6];
 /* MAC address of client/test node */
 static uint8_t mac_addr_test_node[6] = {0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43};
 
-static uint16_t app_idx; // needed?
-static uint16_t addr;
+// static uint16_t app_idx; // needed?
+// static uint16_t addr;
 
 uint8_t target_mac[6];
 int target_ttl;
@@ -53,7 +53,19 @@ The TESTER node calculates RRT and logs the results using ethernet.
 Tge FIELD node only responds to incoming messages  */
 static enum Role {TESTER_N, FIELD_N, NONE};
 
+/* State of the Latency Test. 
+INIT: initializes nodes and 
+RUN: latency test is running. Sends latency message 
+and then waits for response.
+CONT: latency response message has arrived. Go to rtt calculation, then RUN. 
+*/
+static enum Test_State {INIT, RUN, CONT}
+
 static int latency_init_test();
+
+/* Returns the bit-shifted mac address as a unique unicast address
+    on success, returns 1 otherwise. */
+static int latency_get_unicast_addr(uint8_t mac_addr[6]);
 
 void handle_latency_inbound_msg(struct bt_mesh_model *model,
                         struct bt_mesh_msg_ctx *ctx,

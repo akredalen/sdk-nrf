@@ -109,10 +109,11 @@ struct bt_mesh_settings_srv_handlers {
 	 * @param[in] srv Server instance to get the state of.
 	 * @param[in] ctx Message context for the message that triggered the
 	 * change, or NULL if the change is not coming from a message.
-	 * @param[out] rsp Response structure to be filled.
 	 */
 	void (*const latency_in)(struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx);
+			  struct bt_mesh_msg_ctx *ctx, 
+			  struct bt_mesh_settings_latency *msg, 
+			  enum Test_State test_state);
 
 	/** @brief Respond to Outbound Latency Message
 	 *
@@ -124,7 +125,8 @@ struct bt_mesh_settings_srv_handlers {
 	 * @param[out] rsp Response structure to be filled.
 	 */
 	void (*const latency_out)(struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx);
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct bt_mesh_settings_latency *msg);
 };
 
 void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,

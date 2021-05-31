@@ -188,51 +188,72 @@ static void txp_get(struct bt_mesh_settings_srv *srv, struct bt_mesh_msg_ctx *ct
 
 ////////////////////////////// LATENCY TEST /////////////////////////////////////
 
-/* Triggered by Ethernet Command System */
-void start_latency_test (void){
+static void latency_test (struct bt_mesh_settings_srv *srv,
+			  struct bt_mesh_msg_ctx *ctx, struct bt_mesh_settings_latency *msg, enum Test_State test_state){
 
-    int err;
+    switch (test_state){
 
-	err = latency_init_test();
-	if (err){
-		printk("Error: Failed to initialize node");
-	}
+		case INIT:
 
-    /* Fetch next node address and set TTL (hard coded)*/
-    for (int i = 0; i < NODES_TOTAL; i++){
-        
-            memcpy(target_mac, node_data_mac_ttl[i].mac_address, sizeof(target_mac));
-            target_ttl = node_data_mac_ttl[i].ttl;
-            
-            err = latency_set_unicast_addr(target_mac);
-            if (err) {
-                printk("Error: unable to form a valid unicast address");
-            }
-            err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
-            if (err) {
-                printk("Error: unable to set TTL value");
-            }
+			int err;
+			int node_count;
+			int msg_count;
+			uint16_t addr;
 
-            /* Send flood of messages to unicast address */
+			err = latency_init_test();
+			if (err){
+				printk("Error: Failed to initialize node");
+			}
+
+			goto case RUN;
+
+		case RUN:
+			/* Fetch next node address and set TTL (hard coded)*/
 			struct bt_mesh_settings_latency latency_msg;
+			for (node_count; node_count < NODES_TOTAL; node_count++){
+			
+				memcpy(target_mac, node_data_mac_ttl[i].mac_address, sizeof(target_mac));
+				target_ttl = node_data_mac_ttl[i].ttl;
+				
+				latency_msg.target_mac = target_mac; 
+				
+				addr = latency_get_unicast_addr(target_mac);
+				if (addr == 1){
+					printk("Error: unable to get unicast address");
+					return;}
+			
+				err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
+				if (err) {
+					printk("Error: unable to set TTL value");
+				}
 
-            for (int k = 0; k < MSG_AMOUNT; ++k) {
+				/* Send flood of messages to unicast address */
+				for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
 
-                err = latency_send_msg(&settings_srv, &addr, &latency_msg);
-                if (err){
-                    printk("ERROR: latency message nr. %d failed. \n", k);
-                }
-                else{
-                    outbound_time = k_uptime_get();
-                }
+					err = latency_send_msg(&settings_srv, &addr, &latency_msg);
+					if (err){
+						printk("ERROR: latency message nr. %d failed. \n", k);
+					}
+					else{
+						outbound_time = k_uptime_get();
+					}
+					break;
 
-                // wait for reply from inbound handler...then:
-				inbound_time = k_uptime_get();
-				rtt = inbound_time - outbound_time;
+					continue_flood:
+					/* continue for-loop for sending the next message */
+					
+				} 
+			}
+			return;
 
-                // logg over ethernet...
-                
-            }
+		case CONT:
+			inbound_time = k_uptime_get();
+			rtt = inbound_time - outbound_time;
+
+			// logg over ethernet...
+
+			goto continue_flood;
+	 
     }
 }
 
@@ -254,8 +275,8 @@ const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
 static const struct bt_mesh_settings_srv_handlers settings_handlers = {
 	.set = txp_set,
 	.get = txp_get,
-	.latency_in = handle_latency_inbound_msg,
-	.latency_out = handle_latency_outbound_msg,
+	.latency_in = latency_test, // must continue test and calc rtt
+	//.latency_out = handle_latency_outbound_msg,
 };
 
 static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);

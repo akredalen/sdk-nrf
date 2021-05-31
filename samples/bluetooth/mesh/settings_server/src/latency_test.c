@@ -42,7 +42,7 @@ for (all addresses) {
 
 /* TEST NODE */
 
-static int latency_send_msg(struct bt_mesh_settings_srv *srv, uint16_t addr, struct bt_mesh_settings_latency *msg){
+static int latency_send_msg(struct bt_mesh_settings_srv *srv, uint16_t addr){
 
     struct bt_mesh_msg_ctx ctx = {
             .addr = addr,
@@ -52,7 +52,9 @@ static int latency_send_msg(struct bt_mesh_settings_srv *srv, uint16_t addr, str
     BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_LATENCY_OUTBOUND_OP, BT_MESH_LATENCY_MSG_LEN_OUTBOUND);
     bt_mesh_model_msg_init(&buf, BT_MESH_LATENCY_OUTBOUND_OP);
 
-    return bt_mesh_model_send(&srv, &ctx, &buf, NULL, NULL);
+    // net_buf_simple_add_u8(&buf, msg->target_mac[6]); // not necessary
+
+    return bt_mesh_model_send(&srv, &ctx, &buf, NULL, NULL); // use model_ackd_send instead?
 }
 
 
@@ -68,8 +70,12 @@ static void handle_latency_inbound_msg(struct bt_mesh_model *model,
 	}
 
     // ..... continue latency test....
+    struct bt_mesh_settings_srv *srv;
+    // struct bt_mesh_settings_srv *srv = model->user_data;
+	// struct bt_mesh_settings_latency uptime = current_uptime;
+    static enum Test_State test_state = CONT; 
 
-
+	srv->handlers->latency_in(srv, ctx, &msg, test_state, current_uptime);
 }
 
 /* FIELD NODES */
@@ -90,43 +96,21 @@ static void handle_latency_outbound_msg(struct bt_mesh_model *model,
 
 }
 
-/**
- * Returns true if the specified address is an address of the local element.
- */
-static bool address_is_local(struct bt_mesh_model *mod, uint16_t addr)
-{
-	return bt_mesh_model_elem(mod)->addr == addr;
-}
 
-/**
- * Returns true if the provided address is unicast address.
- */
-static bool address_is_unicast(uint16_t addr)
-{
-	return (addr > 0) && (addr <= 0x7FFF);
-}
+static uint16_t latency_get_unicast_addr(uint8_t mac_addr[6]){
 
-static int define_unicast_addr(uint8_t mac_addr){
-
-    uint16_t uni_addr;
-    // left shift mac address by two spaces
-
-    return address_is_unicast(uni_addr);
-};
-
-
-static int latency_set_unicast_addr(){
-    int err;
-
+    uint16_t addr; // e.g. 0x7FFF
+    
     // left shift mac address by two spaces
     // addr = ...
 
+    if (!(address_is_unicast()){
+        return 1;}
 
-    //err = !(address_is_unicast());
-    return err;
-};
+    return addr;
+    }
 
-static int init_node(enum Role role){
+static int init_node(enum Role role){ // UN-DONE!
 
     int err;
 
@@ -220,5 +204,29 @@ mod_app_bind
 
  */
 
+///////////////////////////// TOOLS //////////////////////////////
+/**
+ * Returns true if the specified address is an address of the local element.
+ */
+static bool address_is_local(struct bt_mesh_model *mod, uint16_t addr)
+{
+	return bt_mesh_model_elem(mod)->addr == addr;
+}
+
+/**
+ * Returns true if the provided address is unicast address.
+ */
+static bool address_is_unicast(uint16_t addr)
+{
+	return (addr > 0) && (addr <= 0x7FFF);
+}
+
+static int define_unicast_addr(uint8_t mac_addr){
+
+    uint16_t uni_addr;
+    // left shift mac address by two spaces
+
+    return address_is_unicast(uni_addr);
+};
 
 
