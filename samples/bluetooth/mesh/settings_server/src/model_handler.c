@@ -36,25 +36,141 @@
 #include <bluetooth/mesh/dk_prov.h>
 #include <dk_buttons_and_leds.h>
 
+#include <shell/shell.h>
+#include <shell/shell_uart.h>
+
 #include "model_handler.h"
 #include "settings_srv.h"
 #include "latency_test.h"
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(cfg);
+
+static const struct shell *cfg_shell;
+
+/*
+COMMANDS:
+
+test run latency
+test run scalability
+....
+
+test cfg app_key
+test cfg bind
+....
+
+*/
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////// LATENCY TEST /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+
+/*
+OUTBOUND messages are those that are sent from the TEST node, to the FIELD node.
+INBOUND messages are those that are sent from the FIELD node, back to the TEST node
+RTT is the calculated Round-Trip-Time
+*/
+int64_t out_time; 
+int64_t in_time;
+int64_t rtt;
+
+/* Node address (unicast) */
+uint16_t addr = 0x0000;
+
+uint16_t  app_idx = 0;
+uint8_t target_mac[6];
+int target_ttl;
+
+// DO: add "time-out" handler...
+// DO: remove the outer node-for loop (handled by python?)
+// DO: fix goto statement
+
+static int latency_test (struct bt_mesh_settings_srv *srv,
+			  struct bt_mesh_msg_ctx *ctx, enum Latency_Test_State test_state, int64_t time){
+
+    int err = 0;
+	int node_count = 0;
+	int msg_count = 0;
+	// NOTE: Do these get updated correctly with the break/continue_msg_seq statement?
+
+	switch (test_state){
+
+		case INIT:
+
+			err = latency_init_test();
+			if (err){
+				printk("Error: Failed to initialize node");
+			}
+
+		/* Case where a response message has arrived from one of the servers... */
+		case CONT:
+			in_time = time;
+			rtt = in_time - out_time;
+
+			// DO: logg over ethernet...
+
+			//goto continue_msg_seq;
+
+		case RUN:
+			/* Fetch next node address and set TTL (hard coded)*/
+			
+			for (node_count; node_count < NODES_TOTAL; node_count++){
+			
+				memcpy(target_mac, node_data_mac_ttl[node_count].mac_address, sizeof(target_mac));
+				target_ttl = node_data_mac_ttl[node_count].ttl;
+				
+				/* Get unicast address */
+				err = set_unicast_addr(target_mac, &addr);
+				if (err){
+					printk("Error: unable to set unicast address");
+					}
+
+				/* Set TTL */
+				//err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
+				if (err) {
+					printk("Error: unable to set TTL value");
+				}
+
+				/* Send messages to node unicast address */
+				for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
+
+					err = latency_send_test_msg(&srv, addr);
+					if (err){
+						printk("ERROR: latency message nr. %d failed. \n", msg_count);
+					}
+					else{
+						out_time = k_uptime_get();
+					}
+					
+					/* Breaks after each sent message and wait for a response */
+					break;
+
+					//continue_msg_seq:
+					/* continue for-loop for message sequence  */
+
+					// OR:
+
+					// while (handle_latency_rsp_msg() = 0){ // waiting for activation of response handler
+					// 	// do nothing...
+					// }
+					
+				} 
+			} 
+			return err;
+	 
+    }
+	if (err){printk("Latency test failed!");}
+	return err;
+}
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////// DEVICE SETTINGS FUNCTIONALITY ////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 static struct bt_conn *default_conn;
-
-
-/*
-OUTBOUND messages are those who are sent from the TEST node, to the FIELD node.
-INBOUND messages are those who are sent from the FIELD node, back to the TEST node
-RTT is the calculated Round-Trip-Time
-*/
-int64_t outbound_time; 
-int64_t inbound_time;
-int64_t rtt;
-
 
 /** TX POWER Functions. Source: zephyr/samples/bluetooth/hci_pwr_ctrl/src/main.c*/
 void hci_set_tx_power(uint8_t handle_type, uint16_t handle, uint8_t txp_lvl)
@@ -186,97 +302,124 @@ static void txp_get(struct bt_mesh_settings_srv *srv, struct bt_mesh_msg_ctx *ct
 }
 
 
-////////////////////////////// LATENCY TEST /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// RUN TEST SHELL /////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
-uint16_t addr = 0xDEADFACE;
-uint16_t  app_idx = 0;
+static int cmd_run_latency(const struct shell *shell, size_t argc, char *argv[]){
+	
+	int err = 0;
+	// err = latency_test();
+	// dk_set_led(1, true);
 
-static void latency_test (struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx, enum Test_State test_state, int64_t time){
+	return err;
+}
 
-    switch (test_state){
+static int cmd_run_scalability(const struct shell *shell, size_t argc, char *argv[]){
+	
+	int err; 
+	// err = scalability_test();
+	// dk_set_led(1, false);
 
-		case INIT:
+	return err;
+}
 
-			int err;
-			int node_count;
-			int msg_count;
+/* Run (test) commands */
+SHELL_STATIC_SUBCMD_SET_CREATE(run_cmds,
+	SHELL_CMD_ARG(latency, NULL,
+		      "Starting Latency Test...",
+		      cmd_run_latency, 1, 0),
+	SHELL_CMD_ARG(scalability, NULL,
+		      "Starting Scalability Test...",
+		      cmd_run_scalability, 1, 0),
+	SHELL_SUBCMD_SET_END
+);
 
-			err = latency_init_test();
-			if (err){
-				printk("Error: Failed to initialize node");
-			}
+////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// CONFIG TEST SHELL /////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
-		case RUN:
-			/* Fetch next node address and set TTL (hard coded)*/
-			
-			for (node_count; node_count < NODES_TOTAL; node_count++){
-			
-				memcpy(target_mac, node_data_mac_ttl[node_count].mac_address, sizeof(target_mac));
-				target_ttl = node_data_mac_ttl[node_count].ttl;
-				
-				addr = latency_get_unicast_addr(target_mac);
-				if (addr == 1){
-					printk("Error: unable to get unicast address");
-					return;}
-			
-				err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
-				if (err) {
-					printk("Error: unable to set TTL value");
-				}
+static int cmd_app_key(const struct shell *shell, size_t argc, char *argv[])
+{
+    uint16_t addr;
+	uint16_t app_key;
+	int err;
 
-				/* Send messages to unicast address */
-				for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
+	addr = strtol(argv[1], NULL, 0);
+	app_key = addr; // only for testing! Remove!
+	
+	shell_print(shell, "Sending app key config message...", argv[1]);
+	
+	// struct bt_mesh_test_config_msg *msg;
+	// struct bt_mesh_settings_srv *srv;
 
-					err = latency_send_msg(&settings_srv, &addr);
-					if (err){
-						printk("ERROR: latency message nr. %d failed. \n", k);
-					}
-					else{
-						outbound_time = k_uptime_get();
-					}
-					break;
+	// msg->cmd = APP_KEY;
+	// srv->model
+	// msg->app_key = 
 
-					continue_msg_seq:
-					/* continue for-loop for message sequence  */
-					
-				} 
-			} 
-			return;
+	
+	//err = bt_mesh_cfg_app_key_add(NULL, addr, NULL, 1, app_key, NULL);
 
-		case CONT:
-			inbound_time = time;
-			rtt = inbound_time - outbound_time;
-
-			// logg over ethernet...
-
-			goto continue_msg_seq;
-	 
-    }
+	if (err) {
+		//LOG_WRN("Failed to send config message: %d", err);
+	}
+ 
+    return 0;
 }
 
 
-////////////////////////////// CONFIG /////////////////////////////////////
+static int cmd_bind_app(const struct shell *shell, size_t argc,
+			    char *argv[])
+{
+	int err;
 
-const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
-    { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
-    { BT_MESH_DEVICE_SETTINGS_SET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET,    handle_set },
+	//err = bt_mesh_cfg_mod_app_bind(ADD ARGUMENTS);
 
-	/* LATENCY TEST handlers */
-	{BT_MESH_LATENCY_INBOUND_OP,	BT_MESH_LATENCY_MSG_LEN_INBOUND,	handle_latency_inbound_msg},
-	{BT_MESH_LATENCY_OUTBOUND_OP,	BT_MESH_LATENCY_MSG_LEN_OUTBOUND,	handle_latency_outbound_msg},
+	return 0;
+}
 
-    BT_MESH_MODEL_OP_END,
-};
+/* Configuration commands */
+SHELL_STATIC_SUBCMD_SET_CREATE(cfg_cmds,
+	SHELL_CMD_ARG(app_key, NULL,
+		      "App key ...",
+		      cmd_app_key, 1, 0),
+	SHELL_CMD_ARG(bind, NULL,
+		      "Bind ...",
+		      cmd_bind_app, 1, 0),
+	
+	SHELL_SUBCMD_SET_END
+);
 
-static const struct bt_mesh_settings_srv_handlers settings_handlers = {
-	.set = txp_set,
-	.get = txp_get,
-	.latency_in = latency_test, // must continue test and calc rtt
-	//.latency_out = handle_latency_outbound_msg,
-};
+///////////////////////////////////////////////////////////////////////////
 
-static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
+static int cmd_test(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help(shell);
+		/* shell returns 1 when help is printed */
+		return 1;
+	}
+
+	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+
+	return -EINVAL;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(test_cmds,
+
+	SHELL_CMD(run, &run_cmds, "Run test commands", cmd_test),
+	SHELL_CMD(cfg, &cfg_cmds, "Run test commands", cmd_test),
+	
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_ARG_REGISTER(test, &test_cmds, "Bluetooth Mesh Test commands",
+               cmd_test, 1, 1);
+
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////// HEALTH SERVER SETUP //////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 /* Set up a repeating delayed work to blink the DK's LEDs when attention is
  * requested.
@@ -319,10 +462,43 @@ static struct bt_mesh_health_srv health_srv = {
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
+////////////////////////////////////////////////////////////////////////////
+///////////////////////// MODEL SETUP //////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+
+const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
+    { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
+    { BT_MESH_DEVICE_SETTINGS_SET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET,    handle_set },
+
+	/* LATENCY TEST handlers */
+	// {BT_MESH_LATENCY_RSP_OP,	BT_MESH_LATENCY_MSG_LEN_RSP,	handle_latency_rsp_msg},
+	// {BT_MESH_LATENCY_TEST_OP,	BT_MESH_LATENCY_MSG_LEN_TEST,	handle_latency_test_msg},
+
+	/* TEST Configuration */
+	//{BT_MESH_TEST_CONFIG_CONFIG_OP, BT_MESH_TEST_MSG_LEN_CONFIG, handle_test_config},
+
+    BT_MESH_MODEL_OP_END,
+};
+
+static const struct bt_mesh_settings_srv_handlers settings_handlers = {
+	.set = txp_set,
+	.get = txp_get,
+	//.latency_rsp = latency_test, // must continue test and calc rtt
+	//.latency_test = ,
+
+	//.cfg = handle_test_config,
+
+	// //.app_key = handle_app_key,
+	// //.bind = handle_bind,
+};
+
+static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
+
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1,
 		    BT_MESH_MODEL_LIST(
 				 BT_MESH_MODEL_CFG_SRV,
+				 // BT_MESH_MODEL_CFG_CLI,
 				 BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 			BT_MESH_MODEL_LIST(BT_MESH_MODEL_SETTINGS_SRV(&settings_srv))),
 };
@@ -337,7 +513,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_delayed_work_init(&attention_blink_work, attention_blink);
 
-	//bt_mesh_net_transmit_set(BT_MESH_TRANSMIT(2, 20));
+	cfg_shell = shell_backend_uart_get_ptr();
+	shell_print(cfg_shell, ">>> Bluetooth Mesh Test Config sample <<<");
 
 	return &comp;
 }

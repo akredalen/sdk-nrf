@@ -18,6 +18,9 @@
 #include "hp_led.h"
 #include "model_handler.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(cfg, CONFIG_LOG_DEFAULT_LEVEL);
+
 /////////////////////////////// ETHERNET RX WORK ///////////////////////////////
 
 static struct k_delayed_work ethernet_rx_work;
@@ -82,7 +85,7 @@ void main(void)
 	printk("- Settings sample for PCA20036 -\n");
 	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
 
-	// printk("***Some change***\n");
+	//printk("***Some change***\n");
 
 	err = hp_led_init();
 

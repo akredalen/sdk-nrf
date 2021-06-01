@@ -77,6 +77,7 @@ static void tftp_work_handler(struct k_work *work)
 		if (tick < 100) {
 			tick++;
 		} else {
+			printk("tftp timeout\n");
 			tftp_timeout_handler();
 			tick = 0;
 		}

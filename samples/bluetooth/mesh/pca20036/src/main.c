@@ -40,6 +40,7 @@ void main(void)
 	int err;
 
 	printk("- PCA20036 sample -\n");
+	printk("- TESTING...... -\n");
 	printk("- Version: %d -\n", DFU_APP_VERSION);
 
 	err = hp_led_init();

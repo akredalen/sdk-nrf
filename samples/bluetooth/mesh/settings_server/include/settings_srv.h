@@ -102,34 +102,38 @@ struct bt_mesh_settings_srv_handlers {
 
 	/* LATENCY TEST */
 
-	/** @brief Calculate Round-Trip-Time for message.
-	 *
-	 * @note This handler is mandatory.
-	 *
-	 * @param[in] srv Server instance to get the state of.
-	 * @param[in] ctx Message context for the message that triggered the
-	 * change, or NULL if the change is not coming from a message.
-	 * @param[in] test_state Sets the state of the Latency Test depending
-	 * on if the node wants to initialize the test (INIT), send a message (RUN)
-	 *  or continue its execution after receiving a response message (CONT). 
-	 * @param[in] time The current uptime read upon arrival of the respose message.
-	 */
-	void (*const latency_in)(struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx,  
-			  enum Test_State test_state, int64_t time);
+	// /** @brief Calculate Round-Trip-Time for message.
+	//  *
+	//  * @note This handler is mandatory.
+	//  *
+	//  * @param[in] srv Server instance to get the state of.
+	//  * @param[in] ctx Message context for the message that triggered the
+	//  * change, or NULL if the change is not coming from a message.
+	//  * @param[in] test_state Sets the state of the Latency Test depending
+	//  * on if the node wants to initialize the test (INIT), send a message (RUN)
+	//  *  or continue its execution after receiving a response message (CONT). 
+	//  * @param[in] time The current uptime read upon arrival of the respose message.
+	//  */
+	// void (*const latency_rsp)(struct bt_mesh_settings_srv *srv,
+	// 		  struct bt_mesh_msg_ctx *ctx,  
+	// 		  enum Latency_Test_State test_state, int64_t time);
 
-	/** @brief Respond to Outbound Latency Message
-	 *
-	 * @note This handler is mandatory.
-	 *
-	 * @param[in] srv Server instance to get the state of.
-	 * @param[in] ctx Message context for the message that triggered the
-	 * change, or NULL if the change is not coming from a message.
-	 * @param[out] rsp Response structure to be filled.
-	 */
-	void (*const latency_out)(struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct bt_mesh_settings_latency *msg);
+	// /** @brief Respond to Outbound Latency Message
+	//  *
+	//  * @note This handler is mandatory.
+	//  *
+	//  * @param[in] srv Server instance to get the state of.
+	//  * @param[in] ctx Message context for the message that triggered the
+	//  * change, or NULL if the change is not coming from a message.
+	//  * @param[out] rsp Response structure to be filled.
+	//  */
+	// void (*const latency_test)(struct bt_mesh_settings_srv *srv,
+	// 		  struct bt_mesh_msg_ctx *ctx,
+	// 		  struct bt_mesh_settings_latency *msg);
+
+	// void (*const cfg)(struct bt_mesh_settings_srv *srv,
+	// 				struct bt_mesh_msg_ctx *ctx,
+	// 				const uint8_t *msg);
 };
 
 void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
