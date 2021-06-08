@@ -41,12 +41,17 @@
 
 #include "model_handler.h"
 #include "settings_srv.h"
+// #include "settings_cli.h"
 #include "latency_test.h"
 
 #include <logging/log.h>
-LOG_MODULE_DECLARE(cfg);
+LOG_MODULE_DECLARE(test);
 
-static const struct shell *cfg_shell;
+static const struct shell *test_shell;
+
+// static struct bt_mesh_settings_cli settings_cli = BT_MESH_SETTINGS_CLI_INIT(&status_handler);
+static const struct bt_mesh_settings_srv_handlers settings_handlers;
+static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
 
 /*
 COMMANDS:
@@ -81,85 +86,55 @@ uint16_t  app_idx = 0;
 uint8_t target_mac[6];
 int target_ttl;
 
-// DO: add "time-out" handler...
-// DO: remove the outer node-for loop (handled by python?)
-// DO: fix goto statement
-
-static int latency_test (struct bt_mesh_settings_srv *srv,
-			  struct bt_mesh_msg_ctx *ctx, enum Latency_Test_State test_state, int64_t time){
+static int latency_test (void){
 
     int err = 0;
 	int node_count = 0;
 	int msg_count = 0;
-	// NOTE: Do these get updated correctly with the break/continue_msg_seq statement?
 
-	switch (test_state){
+	struct bt_mesh_settings_status *status;
+	struct bt_mesh_msg_ctx *ctx;
+	
+	err = latency_init_test();
+	if (err){
+		printk("Error: Failed to initialize node");
+		return err;
+	}
 
-		case INIT:
+	/* Fetch next node address and set TTL (hard coded)*/
+	for (node_count; node_count < NODES_TOTAL; node_count++){
+	
+		memcpy(target_mac, node_data_mac_ttl[node_count].mac_address, sizeof(target_mac));
+		target_ttl = node_data_mac_ttl[node_count].ttl;
+		
+		/* Get unicast address */
+		addr = get_unicast_addr(target_mac);
+		
+		ctx->addr = addr;
 
-			err = latency_init_test();
-			if (err){
-				printk("Error: Failed to initialize node");
-			}
-
-		/* Case where a response message has arrived from one of the servers... */
-		case CONT:
-			in_time = time;
-			rtt = in_time - out_time;
-
-			// DO: logg over ethernet...
-
-			//goto continue_msg_seq;
-
-		case RUN:
-			/* Fetch next node address and set TTL (hard coded)*/
-			
-			for (node_count; node_count < NODES_TOTAL; node_count++){
-			
-				memcpy(target_mac, node_data_mac_ttl[node_count].mac_address, sizeof(target_mac));
-				target_ttl = node_data_mac_ttl[node_count].ttl;
-				
-				/* Get unicast address */
-				err = set_unicast_addr(target_mac, &addr);
-				if (err){
-					printk("Error: unable to set unicast address");
-					}
-
-				/* Set TTL */
-				//err = bt_mesh_cfg_ttl_set(NULL, addr, target_ttl, NULL); // DO: fix parameter - address
-				if (err) {
-					printk("Error: unable to set TTL value");
-				}
-
-				/* Send messages to node unicast address */
-				for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
-
-					err = latency_send_test_msg(&srv, addr);
-					if (err){
-						printk("ERROR: latency message nr. %d failed. \n", msg_count);
-					}
-					else{
-						out_time = k_uptime_get();
-					}
-					
-					/* Breaks after each sent message and wait for a response */
-					break;
-
-					//continue_msg_seq:
-					/* continue for-loop for message sequence  */
-
-					// OR:
-
-					// while (handle_latency_rsp_msg() = 0){ // waiting for activation of response handler
-					// 	// do nothing...
-					// }
-					
-				} 
-			} 
+		/* Set TTL */
+		err = bt_mesh_cfg_ttl_set(BT_MESH_NET_PRIMARY, addr, target_ttl, NULL);
+		if (err) {
+			printk("Error: unable to set TTL value");
 			return err;
-	 
-    }
-	if (err){printk("Latency test failed!");}
+		}
+
+		/* Send messages to node address */
+		for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
+
+			// err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &status);
+
+			/* Blocking while waiting for a response */
+			if (err){
+				printk("ERROR: latency message nr. %d failed. \n", msg_count);
+				return err;
+			}
+			else{
+				/* Response is received. Record new time-stamp */
+				out_time = k_uptime_get();
+			}
+		} 
+	} 
 	return err;
 }
 
@@ -310,7 +285,7 @@ static int cmd_run_latency(const struct shell *shell, size_t argc, char *argv[])
 	
 	int err = 0;
 	// err = latency_test();
-	// dk_set_led(1, true);
+	dk_set_led(1, true);
 
 	return err;
 }
@@ -319,7 +294,7 @@ static int cmd_run_scalability(const struct shell *shell, size_t argc, char *arg
 	
 	int err; 
 	// err = scalability_test();
-	// dk_set_led(1, false);
+	dk_set_led(1, false);
 
 	return err;
 }
@@ -466,16 +441,12 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 ///////////////////////// MODEL SETUP //////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
+// static struct bt_mesh_cfg_cli cfg_cli = {
+// };
+
 const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
     { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
     { BT_MESH_DEVICE_SETTINGS_SET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET,    handle_set },
-
-	/* LATENCY TEST handlers */
-	// {BT_MESH_LATENCY_RSP_OP,	BT_MESH_LATENCY_MSG_LEN_RSP,	handle_latency_rsp_msg},
-	// {BT_MESH_LATENCY_TEST_OP,	BT_MESH_LATENCY_MSG_LEN_TEST,	handle_latency_test_msg},
-
-	/* TEST Configuration */
-	//{BT_MESH_TEST_CONFIG_CONFIG_OP, BT_MESH_TEST_MSG_LEN_CONFIG, handle_test_config},
 
     BT_MESH_MODEL_OP_END,
 };
@@ -483,22 +454,13 @@ const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
 static const struct bt_mesh_settings_srv_handlers settings_handlers = {
 	.set = txp_set,
 	.get = txp_get,
-	//.latency_rsp = latency_test, // must continue test and calc rtt
-	//.latency_test = ,
-
-	//.cfg = handle_test_config,
-
-	// //.app_key = handle_app_key,
-	// //.bind = handle_bind,
 };
-
-static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
 
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1,
 		    BT_MESH_MODEL_LIST(
 				 BT_MESH_MODEL_CFG_SRV,
-				 // BT_MESH_MODEL_CFG_CLI,
+				 // BT_MESH_MODEL_CFG_CLI (&cfg_cli),
 				 BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 			BT_MESH_MODEL_LIST(BT_MESH_MODEL_SETTINGS_SRV(&settings_srv))),
 };
@@ -513,8 +475,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_delayed_work_init(&attention_blink_work, attention_blink);
 
-	cfg_shell = shell_backend_uart_get_ptr();
-	shell_print(cfg_shell, ">>> Bluetooth Mesh Test Config sample <<<");
+	test_shell = shell_backend_uart_get_ptr();
+	shell_print(test_shell, ">>> Bluetooth Mesh Tester sample <<<");
 
 	return &comp;
 }

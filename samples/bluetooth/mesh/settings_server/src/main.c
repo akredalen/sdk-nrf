@@ -19,7 +19,7 @@
 #include "model_handler.h"
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(cfg, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
 
 /////////////////////////////// ETHERNET RX WORK ///////////////////////////////
 

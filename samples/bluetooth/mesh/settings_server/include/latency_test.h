@@ -55,20 +55,11 @@ The TESTER node calculates RRT and logs the results using ethernet.
 Tge FIELD node only responds to incoming messages  */
 static enum Role {TESTER_N, FIELD_N};
 
-/* State of the Latency Test. 
-INIT: initializes nodes 
-RUN: latency test is running. Sends latency message 
-and then waits for response.
-CONT: latency response message has arrived. Go directly to rtt calculation,
- then continue messaging loop. 
-*/
-static enum Latency_Test_State {INIT, RUN, CONT};
-
+/* Initializes node: self provisioning and default configuration */
 int latency_init_test();
 
-/* Returns the bit-shifted mac address as a unique unicast address
-    on success, returns 1 otherwise. */
-static int latency_get_unicast_addr(uint8_t mac_addr[6]);
+/* Sets the address by left-shifting the node MAC address */
+uint16_t get_unicast_addr(uint8_t mac);
 
 // void handle_latency_resp_msg(struct bt_mesh_model *model,
 //                         struct bt_mesh_msg_ctx *ctx,

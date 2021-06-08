@@ -41,7 +41,6 @@ static void handle_status(struct bt_mesh_model *model,
 	}
 }
 
-// DO: add latency_test opcode and handler
 const struct bt_mesh_model_op _bt_mesh_settings_cli_op[] = {
     { BT_MESH_DEVICE_SETTINGS_STATUS_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_STATUS,
 		handle_status },

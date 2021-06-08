@@ -13,88 +13,60 @@
 #include "../../../../zephyr/subsys/bluetooth/mesh/prov.h"
 #include "../../../../zephyr/include/bluetooth/mesh/cfg_cli.h"
 
-//////////////////////////// NODE INITIALIZATION /////////////////////////////////
+// See example og self provisioning:
+// C:\git_repos\ncs\zephyr\samples\bluetooth\mesh_provisioner\src\main.c
 
 static int init_node(enum Role role){ 
 
-    int err;
+    
+    int err; 
 
+    static const uint16_t net_idx;
+    static const uint16_t app_idx;
+    uint8_t dev_key[16], net_key[16], app_key[];
+
+    // DO: set values...
+    // bt_rand(net_key, 16);
+
+    uint16_t own_addr;
+    static uint8_t own_mac[6];
+
+    /* Define a unicast address and device key based on MAC address */
+        get_own_mac(&own_mac);
+        own_addr = get_unicast_addr(own_mac);
+        dev_key = get_dev_key(own_mac);
+
+    /* Self provision */
+        err = bt_mesh_provision(net_key, BT_MESH_NET_PRIMARY, 0, 0, own_addr, dev_key);
+
+    /* Initial configurations */
+
+        err = bt_mesh_cfg_app_key_add(net_idx, own_addr, net_idx, app_idx, app_key[16], NULL);
+        if (err) {
+                    printk("Failed to add application key");
+                }
+
+        err = bt_mesh_cfg_mod_app_bind(net_idx, own_addr, own_addr, app_idx,
+                                BT_MESH_MODEL_ID_SETTINGS_SRV, NULL);
+                if (err) {
+                    printk("Failed to bind application");
+                }
+
+    /* Role specific configurations: */
     switch (role) {
         case TESTER_N:
 
-            /* Provisioning */ // [DRAFT]
+            
+            // DO: specify cfg...
 
-            /* Configurations */ // [DRAFT]
-
-            // err = bt_mesh_cfg_app_key_add(net_idx, addr, key_net_idx, key_app_idx,
-            //                 app_key[16], &status);
-
-            // if (err) {
-            //     printk("Failed to add app key");
-            // }
-
-            // err = bt_mesh_cfg_mod_app_bind(net_idx, addr, addr, app_idx,
-            //                 BT_MESH_MODEL_ID_SETTINGS_SRV, &status); // use SETUP_SRV ?
-            // if (err) {
-            //     printk("Failed to bind application");
-            // }
-
+            /* Set publication address */
             // err = bt_mesh_cfg_mod_pub_set(net_idx, addr, addr,
-            //                 BT_MESH_MODEL_ID_SETTINGS_SRV, &pub, &status);
-
-            // if (err) {
-            //     printk("Failed to set publication settings");
-            // }
 
             return;
 
         case FIELD_N:
 
-            /* Provisioning */ // [DRAFT]
-
-            // Unicast address
-
-            uint16_t own_addr;
-            static uint8_t own_mac[6];
-
-            get_own_mac(&own_mac);
-            own_addr = latency_get_unicast_addr(own_mac);
-
-            // See the mesh shell for bt_mesh_prov... function. 
-
-            // Device key
-
-            // Network Key
-
-            // IV index
-
-
-            /* Configurations */ // MOVE this to be handled as commands from client
-            
-        //     err = bt_mesh_cfg_app_key_add(net_idx, addr, key_net_idx, key_app_idx,
-        //                     app_key[16], &status);
-
-        //     if (err) {
-        //         printk("Failed to add app key");
-        //     }
-
-        //     err = bt_mesh_cfg_mod_app_bind(net_idx, addr, addr, app_idx,
-        //                     BT_MESH_MODEL_ID_SETTINGS_SRV, &status);
-        //     if (err) {
-        //         printk("Failed to bind application");
-        //     }
-        
-        //     err = bt_mesh_cfg_net_transmit_set(NULL, addr, transmitt_value, NULL);
-
-        //     if (err) {
-        //     printk("Failed to set transmit settings");
-        // }
-        
-        //     err = bt_mesh_cfg_relay_set(NULL, addr, NULL, NULL, NULL, NULL);
-
-        //     if (err) {
-        //     printk("Failed to set relay settings");
-        // }
+            // DO: specify cfg...
 
         return;
 
@@ -127,7 +99,7 @@ int latency_init_test(){
 }
 
 ////////////////////////////////////////////////////////////////////////////
-//////////////////////////////// TESTER NODE ///////////////////////////////
+//////////////////////////////// DNU; TESTER NODE ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
 static int latency_send_test_msg(struct bt_mesh_settings_srv *srv, uint16_t addr){
@@ -142,6 +114,7 @@ static int latency_send_test_msg(struct bt_mesh_settings_srv *srv, uint16_t addr
     bt_mesh_model_msg_init(&buf, BT_MESH_LATENCY_TEST_OP);
 
         /* Message contains only OP code */
+        --
 
     return bt_mesh_model_send(&srv, &ctx, &buf, NULL, NULL); 
 }
@@ -170,7 +143,7 @@ static void handle_latency_rsp_msg(struct bt_mesh_model *model,
 
 
 ////////////////////////////////////////////////////////////////////////////
-//////////////////////////////// FIELD NODES ///////////////////////////////
+//////////////////////////////// DNU;FIELD NODES ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
 static int handle_latency_test_msg(struct bt_mesh_model *model,
@@ -189,7 +162,6 @@ static int handle_latency_test_msg(struct bt_mesh_model *model,
 
     }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// TOOLS /////////////////////////////////////
@@ -212,12 +184,26 @@ static bool address_is_unicast(uint16_t addr)
 }
 
 /* Sets the address by left-shifting the node MAC address */
-static int set_unicast_addr(uint8_t mac, uint16_t *addr){
+uint16_t get_unicast_addr(uint8_t mac[]){
 
+    uint16_t addr;
     // DO: left shift mac address by two spaces..
-    // &uni_addr =
+    // addr =
 
-    return address_is_unicast(addr); // e.g. 0x7FFF
+    return addr; // e.g. 0x7FFF
+};
+
+/* Sets the device key by left-shifting the node MAC address */
+static uint8_t get_dev_key(uint8_t mac[]){
+
+    uint8_t key[16] = {0};
+
+    for (int i = 0, i < 6, i++){
+
+        key[i] = mac[i];
+    }
+
+    return key;
 };
 
 static const uint8_t *extract_msg(struct net_buf_simple *buf)
