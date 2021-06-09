@@ -106,4 +106,10 @@ void main(void)
 	printk("- Initiated -\n");
 
 	/* DHCP may not be leased yet - check flag */
+
+	err = latency_init_test();
+	if (err) {
+		printk("Error initializing latency test\n");
+		return;
+	}
 }

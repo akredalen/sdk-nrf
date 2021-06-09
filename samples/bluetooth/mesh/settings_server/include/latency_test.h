@@ -16,18 +16,18 @@
 #define MSG_AMOUNT 50
 #define NODES_TOTAL 2
 
-#define BT_MESH_LATENCY_TEST_OP \
-		BT_MESH_MODEL_OP_3(0xC4, BT_MESH_NORDIC_SEMI_COMPANY_ID)
+// #define BT_MESH_LATENCY_TEST_OP \
+// 		BT_MESH_MODEL_OP_3(0xC4, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
-#define BT_MESH_LATENCY_RSP_OP \
-		BT_MESH_MODEL_OP_3(0xC5, BT_MESH_NORDIC_SEMI_COMPANY_ID)
+// #define BT_MESH_LATENCY_RSP_OP \
+// 		BT_MESH_MODEL_OP_3(0xC5, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
-#define BT_MESH_TEST_CONFIG_CONFIG_OP \
-		BT_MESH_MODEL_OP_3(0xC6, BT_MESH_NORDIC_SEMI_COMPANY_ID)
+// #define BT_MESH_TEST_CONFIG_CONFIG_OP \
+// 		BT_MESH_MODEL_OP_3(0xC6, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
-#define BT_MESH_LATENCY_MSG_LEN_TEST 1
-#define BT_MESH_LATENCY_MSG_LEN_RSP 1
-#define BT_MESH_TEST_MSG_LEN_CONFIG 2
+// #define BT_MESH_LATENCY_MSG_LEN_TEST 1
+// #define BT_MESH_LATENCY_MSG_LEN_RSP 1
+// #define BT_MESH_TEST_MSG_LEN_CONFIG 2
 
 ///////////////////////////////////////////////////////
 
@@ -58,28 +58,12 @@ static enum Role {TESTER_N, FIELD_N};
 /* Initializes node: self provisioning and default configuration */
 int latency_init_test();
 
-/* Sets the address by left-shifting the node MAC address */
-uint16_t get_unicast_addr(uint8_t mac);
+/* Sets the address by combining the MSB and the LSB of the MAC address,
+and left-shifting by two bits*/
+static int set_unicast_addr(uint16_t *addr);
 
-// void handle_latency_resp_msg(struct bt_mesh_model *model,
-//                         struct bt_mesh_msg_ctx *ctx,
-//                         struct net_buf_simple *buf);
+/* Sets the device key by filling the left-most octets with the node MAC address */
+static int set_dev_key(uint8_t *key[]);
 
-// void handle_latency_test_msg(struct bt_mesh_model *model,
-//                         struct bt_mesh_msg_ctx *ctx,
-//                         struct net_buf_simple *buf);
-
-///////////////////////// TEST CONFIG ////////////////////////
-
-static enum Config_CMD {APP_KEY, BIND, PUB, SUB, TRANS};
-
-/* Configuration message to be sent from cfg client to cfg srv */
-static struct bt_mesh_test_config_msg{
-    enum Config_CMD cmd;
-    uint16_t app_key;
-    uint16_t pub_addr;
-    uint16_t sub_addr;
-    int transmitt;
-};
 
 #endif /* LATENCY_TEST */
