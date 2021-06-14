@@ -107,6 +107,11 @@ void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 void handle_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf);
 
+/** @cond INTERNAL_HIDDEN */
+extern const struct bt_mesh_model_op _bt_mesh_settings_srv_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_settings_srv_cb;
+/** @endcond */
+
 #ifdef __cplusplus
 }
 #endif

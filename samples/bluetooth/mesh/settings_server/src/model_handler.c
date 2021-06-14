@@ -41,7 +41,6 @@
 
 #include "model_handler.h"
 #include "settings_srv.h"
-// #include "settings_cli.h"
 #include "latency_test.h"
 
 #include <logging/log.h>
@@ -49,94 +48,8 @@ LOG_MODULE_DECLARE(test);
 
 static const struct shell *test_shell;
 
-// static struct bt_mesh_settings_cli settings_cli = BT_MESH_SETTINGS_CLI_INIT(&status_handler);
 static const struct bt_mesh_settings_srv_handlers settings_handlers;
 static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
-
-/*
-COMMANDS:
-
-test run latency
-test run scalability
-....
-
-test cfg app_key
-test cfg bind
-....
-
-*/
-
-////////////////////////////////////////////////////////////////////////////
-///////////////////////// LATENCY TEST /////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-
-/*
-OUTBOUND messages are those that are sent from the TEST node, to the FIELD node.
-INBOUND messages are those that are sent from the FIELD node, back to the TEST node
-RTT is the calculated Round-Trip-Time
-*/
-int64_t out_time; 
-int64_t in_time;
-int64_t rtt;
-
-/* Node address (unicast) */
-uint16_t addr = 0x0000;
-
-uint16_t  app_idx = 0;
-uint8_t target_mac[6];
-int target_ttl;
-
-static int latency_test (void){
-
-    int err = 0;
-	int node_count = 0;
-	int msg_count = 0;
-
-	struct bt_mesh_settings_status *status;
-	struct bt_mesh_msg_ctx *ctx;
-	
-	err = latency_init_test();
-	if (err){
-		printk("Error: Failed to initialize node");
-		return err;
-	}
-
-	/* Fetch next node address and set TTL (hard coded)*/
-	for (node_count; node_count < NODES_TOTAL; node_count++){
-	
-		memcpy(target_mac, node_data_mac_ttl[node_count].mac_address, sizeof(target_mac));
-		target_ttl = node_data_mac_ttl[node_count].ttl;
-		
-		/* Get unicast address */
-		addr = get_unicast_addr(target_mac);
-		
-		ctx->addr = addr;
-
-		/* Set TTL */
-		err = bt_mesh_cfg_ttl_set(BT_MESH_NET_PRIMARY, addr, target_ttl, NULL);
-		if (err) {
-			printk("Error: unable to set TTL value");
-			return err;
-		}
-
-		/* Send messages to node address */
-		for (msg_count; msg_count < MSG_AMOUNT; ++msg_count) {
-
-			// err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &status);
-
-			/* Blocking while waiting for a response */
-			if (err){
-				printk("ERROR: latency message nr. %d failed. \n", msg_count);
-				return err;
-			}
-			else{
-				/* Response is received. Record new time-stamp */
-				out_time = k_uptime_get();
-			}
-		} 
-	} 
-	return err;
-}
 
 ////////////////////////////////////////////////////////////////////////////
 ///////////////////////// DEVICE SETTINGS FUNCTIONALITY ////////////////////
@@ -278,13 +191,25 @@ static void txp_get(struct bt_mesh_settings_srv *srv, struct bt_mesh_msg_ctx *ct
 
 
 ////////////////////////////////////////////////////////////////////////////
-/////////////////////////////// RUN TEST SHELL /////////////////////////////
+/////////////////////////////// DNU; RUN TEST SHELL ////////////////////////
 ////////////////////////////////////////////////////////////////////////////
+
+/*COMMANDS:
+
+test run latency
+test run scalability
+....*/
 
 static int cmd_run_latency(const struct shell *shell, size_t argc, char *argv[]){
 	
 	int err = 0;
-	// err = latency_test();
+	err = latency_test_run();
+
+	if(err){
+		printk("ERROR: Failed to initialize Latency Test \n");}
+	else{
+		printk("Latency test initialized \n");}
+	
 	dk_set_led(1, true);
 
 	return err;
@@ -292,7 +217,7 @@ static int cmd_run_latency(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_run_scalability(const struct shell *shell, size_t argc, char *argv[]){
 	
-	int err; 
+	int err = 0; 
 	// err = scalability_test();
 	dk_set_led(1, false);
 
@@ -311,8 +236,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(run_cmds,
 );
 
 ////////////////////////////////////////////////////////////////////////////
-//////////////////////////////// CONFIG TEST SHELL /////////////////////////
+//////////////////////////////// DNU; CONFIG TEST SHELL ////////////////////
 ////////////////////////////////////////////////////////////////////////////
+
+/*COMMANDS:
+
+test cfg app_key
+test cfg bind
+....*/
 
 static int cmd_app_key(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -346,11 +277,11 @@ static int cmd_app_key(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_bind_app(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
-	int err;
+	int err = 0;
 
 	//err = bt_mesh_cfg_mod_app_bind(ADD ARGUMENTS);
 
-	return 0;
+	return err;
 }
 
 /* Configuration commands */
@@ -364,7 +295,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cfg_cmds,
 	
 	SHELL_SUBCMD_SET_END
 );
-
 ///////////////////////////////////////////////////////////////////////////
 
 static int cmd_test(const struct shell *shell, size_t argc, char **argv)
@@ -441,8 +371,8 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 ///////////////////////// MODEL SETUP //////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-// static struct bt_mesh_cfg_cli cfg_cli = {
-// };
+static struct bt_mesh_cfg_cli cfg_cli = {
+};
 
 const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
     { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
@@ -460,7 +390,7 @@ static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1,
 		    BT_MESH_MODEL_LIST(
 				 BT_MESH_MODEL_CFG_SRV,
-				 // BT_MESH_MODEL_CFG_CLI (&cfg_cli),
+				 BT_MESH_MODEL_CFG_CLI (&cfg_cli),
 				 BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 			BT_MESH_MODEL_LIST(BT_MESH_MODEL_SETTINGS_SRV(&settings_srv))),
 };

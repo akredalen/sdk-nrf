@@ -15,11 +15,13 @@
 #include <sys/byteorder.h>
 #include <zephyr.h>
 
+#include "model_handler.h"
 #include "w5500.h"
 #include "pca20036_ethernet.h"
 #include "ethernet_command_system.h"
 #include "ethernet_dfu.h"
 #include "hp_led.h"
+#include "model_handler.h"
 #include "latency_test.h"
 
 #include <logging/log.h>

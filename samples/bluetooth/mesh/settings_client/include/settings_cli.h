@@ -79,6 +79,10 @@ struct bt_mesh_settings_cli {
 	struct bt_mesh_model *model;
 };
 
+// void status_handler(struct bt_mesh_settings_cli *cli,
+//  			   struct bt_mesh_msg_ctx *ctx,
+//  			   const struct bt_mesh_settings_status *status);
+
 int bt_mesh_settings_cli_get(struct bt_mesh_settings_cli *cli,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct bt_mesh_settings_status *rsp);
@@ -88,6 +92,10 @@ int bt_mesh_settings_cli_set(struct bt_mesh_settings_cli *cli,
 			  const struct bt_mesh_settings_set *set,
 			  struct bt_mesh_settings_status *rsp);
 
+/** @cond INTERNAL_HIDDEN */
+extern const struct bt_mesh_model_op _bt_mesh_settings_cli_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_settings_cli_cb;
+/** @endcond */
 
 #ifdef __cplusplus
 }
