@@ -77,10 +77,10 @@ int bt_mesh_settings_cli_get(struct bt_mesh_settings_cli *cli,
 			       BT_MESH_DEVICE_SETTINGS_STATUS_OP, rsp);
 }
 
-static struct bt_mesh_model_pub pub_ctx = {
-    .msg = NET_BUF_SIMPLE(BT_MESH_MODEL_BUF_LEN(BT_MESH_DEVICE_SETTINGS_SET_OP,
-                                                BT_MESH_DEVICE_SETTINGS_MSG_MAXLEN_SET)),
-};
+// static struct bt_mesh_model_pub pub_ctx = {
+//     .msg = NET_BUF_SIMPLE(BT_MESH_MODEL_BUF_LEN(BT_MESH_DEVICE_SETTINGS_SET_OP,
+//                                                 BT_MESH_DEVICE_SETTINGS_MSG_MAXLEN_SET)),
+// };
 
 int bt_mesh_settings_cli_set(struct bt_mesh_settings_cli *cli,
 			  struct bt_mesh_msg_ctx *ctx,

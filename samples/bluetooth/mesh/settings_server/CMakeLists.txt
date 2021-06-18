@@ -12,13 +12,11 @@ target_sources(app PRIVATE
 	src/main.c
 	src/model_handler.c
 	src/settings_srv.c
-	src/latency_test.c
 	src/pca20036_dfu/pca20036_ethernet.c
 	src/pca20036_dfu/ethernet_dfu.c
 	src/pca20036_dfu/ethernet_command_system.c
 	src/pca20036_dfu/ethernet_utils.c
 	src/pca20036_dfu/hp_led.c
-	C:/git_repos/ncs/nrf/samples/bluetooth/mesh/settings_client/src/settings_cli.c
 	../../../../../modules/hal/wiznet/Callback/dhcp_cb.c
 	../../../../../modules/hal/wiznet/Ethernet/W5500/w5500.c
 	../../../../../modules/hal/wiznet/Ethernet/socket.c
@@ -27,8 +25,6 @@ target_sources(app PRIVATE
 	../../../../../modules/hal/wiznet/Internet/TFTP/tftp.c
 	../../../../../modules/hal/wiznet/Internet/TFTP/netutil.c)
 target_include_directories(app PRIVATE include
-	C:/git_repos/ncs/nrf/samples/bluetooth/mesh/settings_client/src
-	C:/git_repos/ncs/nrf/samples/bluetooth/mesh/settings_client/include
 	../../../../../modules/hal/wiznet/Callback
 	../../../../../modules/hal/wiznet/Ethernet
 	../../../../../modules/hal/wiznet/Ethernet/W5500

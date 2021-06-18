@@ -75,7 +75,7 @@ static void settings_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 
 	srv->handlers->set(srv, ctx, &set, &status);
 
-	(void)bt_mesh_settings_srv_pub(srv, NULL, &status);
+	// (void)bt_mesh_settings_srv_pub(srv, NULL, &status);
 
 respond:
 	if (ack) {
@@ -119,4 +119,11 @@ static int bt_mesh_settings_srv_init(struct bt_mesh_model *model)
 
 const struct bt_mesh_model_cb _bt_mesh_settings_srv_cb = {
 	.init = bt_mesh_settings_srv_init
+};
+
+const struct bt_mesh_model_op _bt_mesh_settings_srv_op[] = {
+    { BT_MESH_DEVICE_SETTINGS_GET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET,    handle_get },
+    { BT_MESH_DEVICE_SETTINGS_SET_OP,    BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET,    handle_set },
+
+    BT_MESH_MODEL_OP_END,
 };

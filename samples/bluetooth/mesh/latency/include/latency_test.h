@@ -19,12 +19,31 @@
 /* Defines numer of elements in array */
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
+/* MAC address of client/test node */
+static uint8_t mac_addr_test_node[6] = {0xB0, 0x0A, 0x75, 0xA2, 0xDF, 0x53};
+// 17 ---> B0:0A:75:A2:DF:53  (TESTER NODE)
 
-// static uint8_t transmitt_value = 3;
+static struct Node_data{
+    uint8_t mac_address[6];
+    uint8_t ttl;
+};
+
+/* Hard-coded TTL values for each MAC address */
+static struct Node_data node_data_mac_ttl[NODES_TOTAL] = {
+    {{0xB0, 0xEE, 0x2F, 0x91, 0x30, 0x5A}, 1},
+    {{0xB0, 0x0A, 0x75, 0xA2, 0xDF, 0x53}, 2}
+    // {{0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43}, 1},
+    // {{0xDE, 0xAD, 0xFA, 0xCE, 0x00, 0x00}, 2}
+    // .....
+    };
+
+/* Role of node in network.
+The TESTER node is responsible for sending messages to and receiving from the other FIELD noed in the network. 
+The TESTER node calculates Round-trip time (rtt) and logs the results using ethernet.
+The FIELD node(s) only responds to incoming messages  */
+static enum Role {TESTER_N, FIELD_N};
+static enum Role role;
 
 int latency_test_run();
-
-/* Initializes node (self provisioning and default configuration)*/
-int latency_test_init();
 
 #endif /* LATENCY_TEST */

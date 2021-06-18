@@ -22,9 +22,6 @@
 extern "C" {
 #endif
 
-extern const struct bt_mesh_model_op _bt_mesh_settings_srv_op[];
-extern const struct bt_mesh_model_cb _bt_mesh_settings_srv_cb;
-
 /** @def BT_MESH_SETTINGS_SRV_INIT
  *
  * @brief Init parameters for a bt_mesh_settings_srv instance.

@@ -20,7 +20,7 @@
 #include "ethernet_command_system.h"
 #include "ethernet_dfu.h"
 #include "hp_led.h"
-#include "latency_test.h"
+#include "model_handler.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
@@ -46,6 +46,12 @@ static void ethernet_rx_work_init_start(void)
 
 static struct bt_conn *default_conn;
 
+// static const struct bt_mesh_prov prov = {
+// 	.uuid = dev_uuid,
+// 	.unprovisioned_beacon = unprovisioned_beacon,
+// 	.node_added = node_added,
+// }
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -55,10 +61,11 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	// dk_leds_init();
-	// dk_buttons_init(NULL);
+	dk_leds_init();
+	dk_buttons_init(NULL);
 
 	err = bt_mesh_init(bt_mesh_dk_prov_init(), model_handler_init());
+	
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
 		return;
@@ -110,11 +117,4 @@ void main(void)
 	printk("- Initiated -\n");
 
 	/* DHCP may not be leased yet - check flag */
-
-	// print_network_info();
-
-///////////////////////////////////////////////////////////////////////
-///////////////////// DNU; ONLY FOR PRE-TESTING ///////////////////////
-
-	latency_test_init();
 }
