@@ -16,7 +16,7 @@
 #define MSG_AMOUNT 50
 #define NODES_TOTAL 2
 
-/* Defines numer of elements in array */
+/* Defines number of elements in array */
 #define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 /* MAC address of client/test node */
@@ -31,7 +31,7 @@ static struct Node_data{
 /* Hard-coded TTL values for each MAC address */
 static struct Node_data node_data_mac_ttl[NODES_TOTAL] = {
     {{0xB0, 0xEE, 0x2F, 0x91, 0x30, 0x5A}, 1},
-    {{0xB0, 0x0A, 0x75, 0xA2, 0xDF, 0x53}, 2}
+    // {{0xB0, 0x0A, 0x75, 0xA2, 0xDF, 0x53}, 2}
     // {{0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43}, 1},
     // {{0xDE, 0xAD, 0xFA, 0xCE, 0x00, 0x00}, 2}
     // .....
@@ -42,7 +42,6 @@ The TESTER node is responsible for sending messages to and receiving from the ot
 The TESTER node calculates Round-trip time (rtt) and logs the results using ethernet.
 The FIELD node(s) only responds to incoming messages  */
 static enum Role {TESTER_N, FIELD_N};
-static enum Role role;
 
 int latency_test_run();
 

@@ -23,6 +23,13 @@
 #include <wizchip_conf.h>
 #include <w5500.h>
 #include <logging/log.h>
+#include <shell/shell.h>
+#include <shell/shell_uart.h>
+
+// LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_DECLARE(test);
+
+static const struct shell *test_shell;
 
 #include "pca20036_ethernet.h"
 #include "ethernet_command_system.h"
@@ -33,13 +40,38 @@
 
 static uint16_t own_addr = 0x0000;
 static uint8_t own_mac[6];
+static enum Role role; 
 
 static const uint16_t net_idx = BT_MESH_NET_PRIMARY;
 static const uint16_t app_idx = 0;
 static uint8_t dev_key[16];
 static const uint8_t net_key[16] ={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}; 
-static uint8_t app_key[16] = {2};
+// static uint8_t app_key[16] = {2};
 static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
+
+////////////////////////////////////////////////////////////////////////
+///////////////////////// TEST COMMANDS ////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+/** COMMANDS;
+ * test latency
+*/
+ 
+static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
+{
+    shell_print(shell, "Hello world!", argv[1]);
+	latency_test_run();
+ 
+    return 0;
+}
+ 
+SHELL_STATIC_SUBCMD_SET_CREATE(test_cmds,
+    SHELL_CMD_ARG(latency, NULL, "Print Test", cmd_test, 1, 0), // TEST
+    SHELL_SUBCMD_SET_END
+);
+ 
+SHELL_CMD_ARG_REGISTER(test, &test_cmds, "Bluetooth Mesh Test commands",
+               cmd_test, 1, 1);
 
 ////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// TOOLS /////////////////////////////////////
@@ -141,78 +173,37 @@ static void ethernet_rx_work_init_start(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-///////////////////////// HEALTH SERVER SETUP //////////////////////////////
+///////////////////////// MODEL SETUP //////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-/* Set up a repeating delayed work to blink the DK's LEDs when attention is
- * requested.
- */
-static struct k_delayed_work attention_blink_work;
-
-static void attention_blink(struct k_work *work)
-{
-	static int idx;
-	const uint8_t pattern[] = {
-		BIT(0) | BIT(1),
-		BIT(1) | BIT(2),
-		BIT(2) | BIT(3),
-		BIT(3) | BIT(0),
-	};
-
-	dk_set_leds(pattern[idx++ % ARRAY_SIZE(pattern)]);
-	k_delayed_work_submit(&attention_blink_work, K_MSEC(30));
-}
-
-static void attention_on(struct bt_mesh_model *mod)
-{
-	k_delayed_work_submit(&attention_blink_work, K_NO_WAIT);
-}
-
-static void attention_off(struct bt_mesh_model *mod)
-{
-	k_delayed_work_cancel(&attention_blink_work);
-	dk_set_leds(DK_NO_LEDS_MSK);
-}
-
-static const struct bt_mesh_health_srv_cb health_srv_cb = {
-	.attn_on = attention_on,
-	.attn_off = attention_off,
-};
-
 static struct bt_mesh_health_srv health_srv = {
-	.cb = &health_srv_cb,
 };
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
-////////////////////////////////////////////////////////////////////////////
-///////////////////////// MODEL SETUP //////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
+static void settings_set(struct bt_mesh_settings_srv *srv,
+			  struct bt_mesh_msg_ctx *ctx,
+			  const struct bt_mesh_settings_set *set,
+			  struct bt_mesh_settings_status *rsp){};
+
+static void settings_get(struct bt_mesh_settings_srv *srv,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct bt_mesh_settings_status *rsp){};
 
 static const struct bt_mesh_settings_srv_handlers settings_handlers = {
-	// .get =
-	// .set = 
-
-	// no work...
+	.get = settings_get,
+	.set = settings_set,
 };
 
 static void status_handler(struct bt_mesh_settings_cli *cli,
 			   struct bt_mesh_msg_ctx *ctx,
-			   const struct bt_mesh_settings_status *status);
+			   const struct bt_mesh_settings_status *status){};
 
 static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
 static struct bt_mesh_settings_cli settings_cli = BT_MESH_SETTINGS_CLI_INIT(&status_handler);
 
-static void status_handler(struct bt_mesh_settings_cli *cli,
-			   struct bt_mesh_msg_ctx *ctx,
-			   const struct bt_mesh_settings_status *status){
 
-				   // no work...
-			   }
-
-
-static struct bt_mesh_cfg_cli cfg_cli = {
-};
+static struct bt_mesh_cfg_cli cfg_cli = {};
 
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1,
@@ -238,13 +229,15 @@ static const struct bt_mesh_prov prov = {
 };
 
 ////////////////////////////////////////////////////////////////////////////
-///////////////////////// NODE INITIALIZATION //////////////////////////////
+///////////////////////// NODE CONFIGURATION ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-int latency_configure_self(){
+static void configure_self(struct bt_mesh_cdb_node *self){
 
     struct bt_mesh_cdb_app_key *key;
 	int err;
+
+	uint8_t status;
 
 	printk("Configuring self...\n");
 
@@ -254,34 +247,54 @@ int latency_configure_self(){
 		return;
 	}
 
-    err = bt_mesh_cfg_app_key_add(net_idx, own_addr, net_idx, app_idx, key->keys[0].app_key, NULL);
+    err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
+				      app_idx, key->keys[0].app_key, &status);
     if (err < 0) {
-            printk("Failed to add application key\n");
+            printk("Failed to add application key: %d, %u\n", err, status);
             }
 
-    err = bt_mesh_cfg_mod_app_bind(net_idx, own_addr, 0 , app_idx,
-                                BT_MESH_MODEL_ID_SETTINGS_SRV, NULL);
+    err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
+				       app_idx, BT_MESH_MODEL_ID_SETTINGS_SRV, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
             if (err < 0) {
-                printk("Failed to bind application\n");
+                printk("Failed to bind (settings server) to application\n");
             }
 
-    /* Tester node will also be using the cfg client model */
+    /* Tester node will also be using the settings client model */
     if (mac_addresses_are_equal(own_mac, mac_addr_test_node)){
-        role = TESTER_N;
-
-        err = bt_mesh_cfg_mod_app_bind(net_idx, own_addr, 0, app_idx,
-                                BT_MESH_MODEL_ID_SETTINGS_CLI, NULL);
+		role = TESTER_N;
+		printk("Role: 	TESTER NODE\n");
+		err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
+				       app_idx, BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
         if (err < 0) {
-            printk("Failed to bind application\n");
+            printk("Failed to bind (settings client) application\n");
         }
-    }
-    else{
-        role = FIELD_N;
-    }
+	}else{
+		role = FIELD_N;
+		printk("Role: 	FIELD NODE\n");
+	}
 
-    return err;
+
+	atomic_set_bit(self->flags, BT_MESH_CDB_NODE_CONFIGURED);
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_cdb_node_store(self);
+	}
+
+	printk("Configuration complete\n");
+
 }
 
+static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
+{
+	if (!atomic_test_bit(node->flags, BT_MESH_CDB_NODE_CONFIGURED)) {
+		if (node->addr == own_addr) {
+			printk("Unicast address: %u\n", node->addr);
+			configure_self(node);
+		}
+	}
+
+	return BT_MESH_CDB_ITER_CONTINUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// MESH INIT //////////////////////////////////
@@ -296,20 +309,21 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	// dk_leds_init();
-	// dk_buttons_init(NULL);
-
-	// err = bt_mesh_init(bt_mesh_dk_prov_init(), model_handler_init());
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
 		return;
 	}
 
+	printk("Mesh initialized\n");
+
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
 
+	/* Create and initialize the Mesh Configuration Database. A primary subnet, 
+	ie one with NetIdx 0, will be added and the provided key will be used as
+	NetKey for that subnet. */
 	err = bt_mesh_cdb_create(net_key);
 	if (err == -EALREADY) {
 		printk("Using stored CDB\n");
@@ -325,7 +339,7 @@ static void bt_ready(int err)
         printk("Error printing network info\n");
     }
     else{
-        printf("\n**MAC address**: %u:%u:%u:%u:%u:%u\n", \
+        printf("\nMAC address: %u:%u:%u:%u:%u:%u\n", \
         own_mac[0], own_mac[1], own_mac[2], own_mac[3], own_mac[4], own_mac[5]);
     }
 
@@ -345,7 +359,7 @@ static void bt_ready(int err)
     }
     else{
         printk("Provisioning device...\n ");
-        err = bt_mesh_provision(net_key, net_idx, 0, 0, 1, dev_key);
+        err = bt_mesh_provision(net_key, net_idx, 0, 0, own_addr, dev_key);
         if (err == -EALREADY) {
 		    printk("Using stored settings\n");
 	    } else if (err) {
@@ -355,17 +369,15 @@ static void bt_ready(int err)
 	    }
     }
 
-	/* This will be a no-op if settings_load() loaded provisioning info */
-	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
+	// /* This will be a no-op if settings_load() loaded provisioning info */
+	// bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 
-	printk(" - Mesh initialized -\n");
-	
-	err = latency_configure_self();
+	bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
+	// static struct bt_mesh_cdb_node node;
+	// check_unconfigured(&node, NULL);
 
-	if (err) {
-		printk("Failed to self configurate\n");
-		return;
-	}
+	return;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -389,7 +401,14 @@ static int target_ttl;
 
 int latency_test_run(){
 
-    int err = 0;
+    if(role == TESTER_N){
+		printk("STARTING LATENCY TEST");
+	}else{
+		printk("ERROR: can't run latency test from field node!\n");
+		return 1;
+	}
+
+	int err = 0;
 
 	struct bt_mesh_settings_status status;
 	struct bt_mesh_msg_ctx ctx;
@@ -458,6 +477,9 @@ void main(void)
 {
 	int err;
 
+	test_shell = shell_backend_uart_get_ptr();
+	shell_print(test_shell, ">>> Bluetooth Mesh TEST sample <<<");
+
 	printk("- Latency Test for PCA20036 -\n");
 	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
 
@@ -465,14 +487,12 @@ void main(void)
 
 	if (err) {
 		printk("Error initializing HP LED\n");
-		return;
 	}
 
 	err = pca20036_ethernet_init();
 
 	if (err) {
 		printk("Error initializing buttons\n");
-		return;
 	}
 
 	ethernet_rx_work_init_start();
@@ -484,9 +504,11 @@ void main(void)
 	printk("Initializing mesh...\n");
 
 	/* Initialize BT Mesh, provision and configure local device */
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+
+	bt_ready(0);
 	
 }
