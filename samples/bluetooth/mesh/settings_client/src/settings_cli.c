@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <bluetooth/mesh/models.h>
+#include "model_utils.h"
 
 #include "settings_cli.h"
 

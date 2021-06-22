@@ -13,31 +13,7 @@
 #include <dk_buttons_and_leds.h>
 #include <zephyr.h>
 
-#include "pca20036_ethernet.h"
-#include "ethernet_command_system.h"
-#include "ethernet_dfu.h"
-#include "hp_led.h"
 #include "model_handler.h"
-
-/////////////////////////////// ETHERNET RX WORK ///////////////////////////////
-
-static struct k_delayed_work ethernet_rx_work;
-
-static void ethernet_rx_work_handler(struct k_work *work)
-{
-	ethernet_command_system_rx();
-	k_delayed_work_submit(&ethernet_rx_work, K_MSEC(10));
-}
-
-static void ethernet_rx_work_init_start(void)
-{
-	k_delayed_work_init(&ethernet_rx_work, ethernet_rx_work_handler);
-	// Initialize a delayed work item, 
-	// with a handler function to invoke each time work item is processed
-
-	k_delayed_work_submit(&ethernet_rx_work, K_NO_WAIT);
-	// Submits a delayed work item to the system workqueue of this type
-}
 
 /////////////////////////////// MESH INIT ///////////////////////////////
 
@@ -79,27 +55,4 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
-
-	printk("- Settings sample for PCA20036 -\n");
-	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
-
-	err = hp_led_init();
-
-	if (err) {
-		printk("Error initializing HP LED\n");
-		return;
-	}
-
-	err = pca20036_ethernet_init();
-
-	if (err) {
-		printk("Error initializing buttons\n");
-		return;
-	}
-
-	ethernet_rx_work_init_start();
-
-	printk("- Initiated -\n");
-
-	/* DHCP may not be leased yet - check flag */
 }

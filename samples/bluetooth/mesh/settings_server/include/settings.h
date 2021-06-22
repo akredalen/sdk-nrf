@@ -7,7 +7,7 @@
 /** @file
  *  @defgroup bt_mesh_settings Device Settings Models
  *  @{
- *  @brief API for the Device Settings model.
+ *  @brief API for the Device Settings Model.
  */
 
 #ifndef BT_MESH_SETTINGS_H__
@@ -25,8 +25,6 @@ extern "C" {
 #define BT_MESH_MODEL_ID_SETTINGS_CLI 0x0005
 #define BT_MESH_MODEL_ID_SETTINGS_SRV 0x0006 
 
-/////////////////////// DEVICE SETTINGS ///////////////////////
-
 #define BT_MESH_DEVICE_SETTINGS_GET_OP \
 		BT_MESH_MODEL_OP_3(0xC1, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
@@ -36,8 +34,6 @@ extern "C" {
 #define BT_MESH_DEVICE_SETTINGS_STATUS_OP \
 		BT_MESH_MODEL_OP_3(0xC3, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
-#define BT_MESH_DEVICE_SETTINGS_STATUS_OP \
-		BT_MESH_MODEL_OP_3(0xC3, BT_MESH_NORDIC_SEMI_COMPANY_ID)
 
 #define BT_MESH_DEVICE_SETTINGS_MSG_LEN_GET 0 
 #define BT_MESH_DEVICE_SETTINGS_MSG_MINLEN_SET 1
@@ -65,4 +61,4 @@ struct bt_mesh_settings_status {
 
 /** @} */
 
-#endif /* BT_MESH_SETTINGS_CLI_H__ */
+#endif /* BT_MESH_SETTINGS_H__ */

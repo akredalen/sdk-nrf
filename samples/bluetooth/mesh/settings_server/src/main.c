@@ -7,6 +7,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <bluetooth/mesh/dk_prov.h>
+#include <dk_buttons_and_leds.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -15,42 +16,15 @@
 #include <sys/byteorder.h>
 #include <zephyr.h>
 
-#include "w5500.h"
-#include "pca20036_ethernet.h"
-#include "ethernet_command_system.h"
-#include "ethernet_dfu.h"
 #include "hp_led.h"
 #include "model_handler.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
 
-/////////////////////////////// ETHERNET RX WORK ///////////////////////////////
-
-static struct k_delayed_work ethernet_rx_work;
-
-static void ethernet_rx_work_handler(struct k_work *work)
-{
-	ethernet_command_system_rx();
-	k_delayed_work_submit(&ethernet_rx_work, K_MSEC(10));
-}
-
-static void ethernet_rx_work_init_start(void)
-{
-	k_delayed_work_init(&ethernet_rx_work, ethernet_rx_work_handler);
-
-	k_delayed_work_submit(&ethernet_rx_work, K_NO_WAIT);
-}
-
 /////////////////////////////// MESH INIT ///////////////////////////////
 
 static struct bt_conn *default_conn;
-
-// static const struct bt_mesh_prov prov = {
-// 	.uuid = dev_uuid,
-// 	.unprovisioned_beacon = unprovisioned_beacon,
-// 	.node_added = node_added,
-// }
 
 static void bt_ready(int err)
 {
@@ -92,29 +66,4 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
-
-	printk("- Settings sample for PCA20036 -\n");
-	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
-
-	//printk("***Some change***\n");
-
-	err = hp_led_init();
-
-	if (err) {
-		printk("Error initializing HP LED\n");
-		return;
-	}
-
-	err = pca20036_ethernet_init();
-
-	if (err) {
-		printk("Error initializing buttons\n");
-		return;
-	}
-
-	ethernet_rx_work_init_start();
-
-	printk("- Initiated -\n");
-
-	/* DHCP may not be leased yet - check flag */
 }

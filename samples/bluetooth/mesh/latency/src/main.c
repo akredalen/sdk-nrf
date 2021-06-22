@@ -26,7 +26,6 @@
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 
-// LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
 LOG_MODULE_DECLARE(test);
 
 static const struct shell *test_shell;
@@ -37,7 +36,9 @@ static const struct shell *test_shell;
 #include "hp_led.h"
 #include "latency_test.h"
 #include "ethernet_utils.h"
+#include "settings_cli.h"
 
+/** Self-Provisioning and -configuration; */
 static uint16_t own_addr = 0x0000;
 static uint8_t own_mac[6];
 static enum Role role; 
@@ -46,20 +47,43 @@ static const uint16_t net_idx = BT_MESH_NET_PRIMARY;
 static const uint16_t app_idx = 0;
 static uint8_t dev_key[16];
 static const uint8_t net_key[16] ={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}; 
-// static uint8_t app_key[16] = {2};
 static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
+
+/** LATENCY TEST;
+ * OUTBOUND messages are those that are sent from the TEST node, to the FIELD node.
+ * INBOUND messages are those that are sent from the FIELD node, back to the TEST node
+ * RTT is the calculated Round-Trip-Time
+*/
+static int64_t out_time; 
+static int64_t in_time;
+static int64_t rtt;
+static int lost_msg_count = 0;
+
+static uint16_t target_addr = 0x0000;
+
+static uint8_t target_mac[6];
+static int target_ttl;
+
+static struct bt_mesh_cfg_mod_pub pub = {
+        .addr = 0x0000,
+        .app_idx = app_idx,
+        .cred_flag = false,
+        .ttl = 0,
+        .period = BT_MESH_PUB_PERIOD_SEC(2),
+        .transmit = 3, 
+    };
 
 ////////////////////////////////////////////////////////////////////////
 ///////////////////////// TEST COMMANDS ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 /** COMMANDS;
- * test latency
+ * To start latency test, use command: > test latency
 */
  
 static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 {
-    shell_print(shell, "Hello world!", argv[1]);
+    shell_print(shell, "--- Starting Latency Test ---", argv[1]);
 	latency_test_run();
  
     return 0;
@@ -85,12 +109,12 @@ static bool address_is_unicast(uint16_t addr)
 
 /* Sets the address by combining the two rightmost 8-bits of the MAC address,
 and left-shifting by two bits*/
-static int define_unicast_addr(uint16_t *addr, uint8_t own_mac[6]){
+static int define_unicast_addr(uint16_t *addr, uint8_t mac[6]){
 
     /* Showing example for MAC {0xB0, 0xAE, 0xD4, 0xDA, 0x35, 0x43} */
 
-    uint8_t msb = own_mac[4];                   // MSB = 0x35 = 0011 0101
-    uint8_t lsb = own_mac[5];                   // LSB = 0x43 = 0100 0011
+    uint8_t msb = mac[4];                   // MSB = 0x35 = 0011 0101
+    uint8_t lsb = mac[5];                   // LSB = 0x43 = 0100 0011
 
     uint16_t ph;
     
@@ -100,7 +124,7 @@ static int define_unicast_addr(uint16_t *addr, uint8_t own_mac[6]){
 
     *addr = ph; 
 
-    if(address_is_unicast(own_addr)){
+    if(address_is_unicast(ph)){
         return 0;
     }
     else{
@@ -202,14 +226,24 @@ static void status_handler(struct bt_mesh_settings_cli *cli,
 static struct bt_mesh_settings_srv settings_srv = BT_MESH_SETTINGS_SRV_INIT(&settings_handlers);
 static struct bt_mesh_settings_cli settings_cli = BT_MESH_SETTINGS_CLI_INIT(&status_handler);
 
+// static struct bt_mesh_cfg_srv cfg_srv = {
+// 	.relay = BT_MESH_RELAY_ENABLED,
+// 	.beacon = BT_MESH_BEACON_DISABLED,
+// 	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
+// 	.default_ttl = 7,
+
+// 	/* 3 transmissions with 20ms interval */
+// 	.net_transmit = BT_MESH_TRANSMIT(2, 20),
+// 	.relay_retransmit = BT_MESH_TRANSMIT(3, 20),
+// };
 
 static struct bt_mesh_cfg_cli cfg_cli = {};
 
 static struct bt_mesh_elem elements[] = {
-	BT_MESH_ELEM(1,
+	BT_MESH_ELEM(0,
 		    BT_MESH_MODEL_LIST(
 				 BT_MESH_MODEL_CFG_SRV,
-				 BT_MESH_MODEL_CFG_CLI (&cfg_cli),
+				 BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 				 BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 			BT_MESH_MODEL_LIST(
 				BT_MESH_MODEL_SETTINGS_CLI(&settings_cli),
@@ -247,13 +281,39 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 		return;
 	}
 
-    err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
+    // err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
+	// 			      app_idx, key->keys[0].app_key, &status);
+    // if (err < 0) {
+    //         printk("Failed to add application key: %d, %u\n", err, status);
+    //         }
+
+    // err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
+	// 			       app_idx, BT_MESH_MODEL_ID_SETTINGS_SRV, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
+    //         if (err < 0) {
+    //             printk("Failed to bind (settings server) to application\n");
+    //         }
+
+    // /* Tester node will also be using the settings client model */
+    // if (mac_addresses_are_equal(own_mac, mac_addr_test_node)){
+	// 	role = TESTER_N;
+	// 	printk("Role: 	TESTER NODE\n");
+	// 	err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
+	// 			       app_idx, BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
+    //     if (err < 0) {
+    //         printk("Failed to bind (settings client) application\n");
+    //     }
+	// }else{
+	// 	role = FIELD_N;
+	// 	printk("Role: 	FIELD NODE\n");
+	// }
+
+	err = bt_mesh_cfg_app_key_add(net_idx, own_addr, net_idx,
 				      app_idx, key->keys[0].app_key, &status);
     if (err < 0) {
             printk("Failed to add application key: %d, %u\n", err, status);
             }
 
-    err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
+    err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, own_addr, own_addr,
 				       app_idx, BT_MESH_MODEL_ID_SETTINGS_SRV, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
             if (err < 0) {
                 printk("Failed to bind (settings server) to application\n");
@@ -263,7 +323,7 @@ static void configure_self(struct bt_mesh_cdb_node *self){
     if (mac_addresses_are_equal(own_mac, mac_addr_test_node)){
 		role = TESTER_N;
 		printk("Role: 	TESTER NODE\n");
-		err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
+		err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, own_addr, own_addr,
 				       app_idx, BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
         if (err < 0) {
             printk("Failed to bind (settings client) application\n");
@@ -273,14 +333,13 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 		printk("Role: 	FIELD NODE\n");
 	}
 
-
 	atomic_set_bit(self->flags, BT_MESH_CDB_NODE_CONFIGURED);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_cdb_node_store(self);
 	}
 
-	printk("Configuration complete\n");
+	printk("--- Configuration complete ---\n");
 
 }
 
@@ -288,9 +347,10 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 {
 	if (!atomic_test_bit(node->flags, BT_MESH_CDB_NODE_CONFIGURED)) {
 		if (node->addr == own_addr) {
-			printk("Unicast address: %u\n", node->addr);
 			configure_self(node);
 		}
+	}else{
+		printk("Node is already configured!\n");
 	}
 
 	return BT_MESH_CDB_ITER_CONTINUE;
@@ -307,7 +367,7 @@ static void bt_ready(int err)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	printk("--- Bluetooth initialized ---\n");
 
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
@@ -315,7 +375,7 @@ static void bt_ready(int err)
 		return;
 	}
 
-	printk("Mesh initialized\n");
+	printk("--- Mesh initialized ---\n");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
@@ -365,7 +425,7 @@ static void bt_ready(int err)
 	    } else if (err) {
 		    printk("Provisioning failed (err %d)\n", err);
 	    } else {
-		    printk("Provisioning completed\n");
+		    printk("--- Provisioning completed ---\n");
 	    }
     }
 
@@ -373,8 +433,6 @@ static void bt_ready(int err)
 	// bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 
 	bt_mesh_cdb_node_foreach(check_unconfigured, NULL);
-	// static struct bt_mesh_cdb_node node;
-	// check_unconfigured(&node, NULL);
 
 	return;
 
@@ -384,57 +442,30 @@ static void bt_ready(int err)
 ///////////////////////// LATENCY TEST /////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-/*
-OUTBOUND messages are those that are sent from the TEST node, to the FIELD node.
-INBOUND messages are those that are sent from the FIELD node, back to the TEST node
-RTT is the calculated Round-Trip-Time
-*/
-static int64_t out_time; 
-static int64_t in_time;
-static int64_t rtt;
-static int lost_msg_count = 0;
-
-static uint16_t target_addr = 0x0000;
-
-static uint8_t target_mac[6];
-static int target_ttl;
-
 int latency_test_run(){
 
     if(role == TESTER_N){
-		printk("STARTING LATENCY TEST");
+		printk("\n");
 	}else{
 		printk("ERROR: can't run latency test from field node!\n");
 		return 1;
 	}
 
 	int err = 0;
-
-	struct bt_mesh_settings_status status;
-	struct bt_mesh_msg_ctx ctx;
-
-    static struct bt_mesh_cfg_mod_pub pub = {
-        .addr = 0x0000,
-        .app_idx = app_idx,
-        .cred_flag = false,
-        .ttl = 0,
-        .period = BT_MESH_PUB_PERIOD_SEC(2),
-        .transmit = 3, 
-    };
+	// uint8_t status;
 
 	for (int i = 0; i < NODES_TOTAL; i++){
 	
+		lost_msg_count = 0;
+
 		memcpy(target_mac, node_data_mac_ttl[i].mac_address, sizeof(target_mac));
 		target_ttl = node_data_mac_ttl[i].ttl;
-		
 		define_unicast_addr(&target_addr, target_mac);
 		
-		ctx.addr = target_addr;
+		pub.addr = target_addr;
+        pub.ttl = target_ttl; 
 
-        pub.addr = target_addr;
-        pub.ttl = target_ttl;  
-
-        err = bt_mesh_cfg_mod_pub_set_vnd(net_idx, own_addr, 0,
+        err = bt_mesh_cfg_mod_pub_set_vnd(net_idx, own_addr, own_addr,
          BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID,
          &pub, NULL);
          
@@ -446,23 +477,24 @@ int latency_test_run(){
 		/* Send messages to node address */
 		for (int j = 0; j < MSG_AMOUNT; j++) {
 
-			out_time = k_uptime_get();
-			err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &status);
+			struct bt_mesh_settings_status rsp;
 
-			/* Blocking while waiting for a response... */
+			out_time = k_uptime_get();
+			err = bt_mesh_settings_cli_get(&settings_cli, NULL, &rsp);
+
+			/* Blocking while waiting for response... */
 			if (err < 0){
                 lost_msg_count++;
-				printk("ERROR: latency message nr. %d failed.\nTotal lost messages: %d \n", j, lost_msg_count);
+				printk("ERROR %d: latency message nr. %d failed.\nTotal lost messages: %d \n", err, j+1, lost_msg_count);
 			}
 			else{
 				/* Response is received. Record new time-stamp */
 				in_time = k_uptime_get();
+				rtt = in_time - out_time;
+				printk("Round-trip time: %lld \n", rtt);
+
+				// DO: send response over ethernet...
 			}
-
-			rtt = in_time - out_time;
-			printk("Round-trip time: %lld \n", rtt);
-
-			// DO: send response over ethernet...
 		} 
 	} 
 	return err;
