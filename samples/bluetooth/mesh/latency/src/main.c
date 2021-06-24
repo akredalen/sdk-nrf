@@ -72,8 +72,8 @@ static struct bt_mesh_cfg_mod_pub pub = {
         .app_idx = app_idx,
         .cred_flag = false,
         .ttl = 0,
-        .period = BT_MESH_PUB_PERIOD_SEC(2),
-        .transmit = 3, 
+        .period = 0,
+        .transmit = 2, 
     };
 
 ////////////////////////////////////////////////////////////////////////
@@ -174,7 +174,7 @@ static void setup_cdb(void)
 		return;
 	}
 
-	bt_rand(key->keys[0].app_key, 16);
+	memset(key->keys[0].app_key, 0xAA, 16);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_cdb_app_key_store(key);
@@ -284,35 +284,7 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 		return;
 	}
 
-	// bt_hex(key.keys[0].app_key, 16));
-
-	BT_DBG("APP KEY: 0x%04x", key->keys[0].app_key);
-
-    // err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
-	// 			      app_idx, key->keys[0].app_key, &status);
-    // if (err < 0) {
-    //         printk("Failed to add application key: %d, %u\n", err, status);
-    //         }
-
-    // err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
-	// 			       app_idx, BT_MESH_MODEL_ID_SETTINGS_SRV, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
-    //         if (err < 0) {
-    //             printk("Failed to bind (settings server) to application\n");
-    //         }
-
-    // /* Tester node will also be using the settings client model */
-    // if (mac_addresses_are_equal(own_mac, mac_addr_test_node)){
-	// 	role = TESTER_N;
-	// 	printk("Role: 	TESTER NODE\n");
-	// 	err = bt_mesh_cfg_mod_app_bind_vnd(self->net_idx, self->addr, self->addr,
-	// 			       app_idx, BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
-    //     if (err < 0) {
-    //         printk("Failed to bind (settings client) application\n");
-    //     }
-	// }else{
-	// 	role = FIELD_N;
-	// 	printk("Role: 	FIELD NODE\n");
-	// }
+	BT_HEXDUMP_DBG(key->keys[0].app_key, 16, "AppKey");
 
 	err = bt_mesh_cfg_app_key_add(net_idx, own_addr, net_idx,
 				      app_idx, key->keys[0].app_key, &status);
@@ -406,7 +378,7 @@ static void bt_ready(int err)
         BT_WARN("Error printing network info");
     }
     else{
-        BT_DBG("MAC address: %u:%u:%u:%u:%u:%u", \
+        BT_DBG("MAC address: %02X:%02X:%02X:%02X:%02X:%02X", \
         own_mac[0], own_mac[1], own_mac[2], own_mac[3], own_mac[4], own_mac[5]);
     }
 
@@ -513,7 +485,7 @@ int latency_test_run(){
 				/* Response is received. Record new time-stamp */
 				in_time = k_uptime_get();
 				rtt = in_time - out_time;
-				printk("Round-trip time:" "%" PRId64 "\n", rtt);
+				printk("Round-trip time: %d ms\n", (int32_t) rtt);
 
 				// DO: send response over ethernet...
 			}
