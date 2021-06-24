@@ -281,6 +281,10 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 		return;
 	}
 
+	// bt_hex(key.keys[0].app_key, 16));
+
+	printk("APP KEY: %u\n", key->keys[0].app_key);
+
     // err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
 	// 			      app_idx, key->keys[0].app_key, &status);
     // if (err < 0) {
@@ -461,9 +465,20 @@ int latency_test_run(){
 		memcpy(target_mac, node_data_mac_ttl[i].mac_address, sizeof(target_mac));
 		target_ttl = node_data_mac_ttl[i].ttl;
 		define_unicast_addr(&target_addr, target_mac);
+
+		 struct bt_mesh_msg_ctx ctx = {
+                .addr = target_addr,
+				// .addr = own_addr, // test for loopback mode
+                .send_ttl = BT_MESH_TTL_DEFAULT,
+                .app_idx = 0,
+        };
 		
 		pub.addr = target_addr;
+		printk("Target address: %u\n", target_addr);
         pub.ttl = target_ttl; 
+
+		printk("BEFORE: Settings_cli->pub: %u \n", settings_cli.pub.addr);
+		printk("BEFORE: Settings_cli->mod->pub: %u \n", settings_cli.model->pub->addr);
 
         err = bt_mesh_cfg_mod_pub_set_vnd(net_idx, own_addr, own_addr,
          BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID,
@@ -474,13 +489,17 @@ int latency_test_run(){
 			return err;
 		}
 
+		printk("AFTER: Settings_cli->pub: %u\n", settings_cli.pub.addr);
+		printk("AFTER: Settings_cli->mod->pub: %u\n", settings_cli.model->pub->addr);
+
 		/* Send messages to node address */
 		for (int j = 0; j < MSG_AMOUNT; j++) {
 
 			struct bt_mesh_settings_status rsp;
 
 			out_time = k_uptime_get();
-			err = bt_mesh_settings_cli_get(&settings_cli, NULL, &rsp);
+			// settings_cli.model->pub = target_addr;
+			err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &rsp);
 
 			/* Blocking while waiting for response... */
 			if (err < 0){

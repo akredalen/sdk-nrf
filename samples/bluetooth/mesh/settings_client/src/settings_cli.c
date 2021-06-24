@@ -19,7 +19,7 @@ static void handle_status(struct bt_mesh_model *model,
 			printk("Error: Buffer length out of scope (handle_status)");
 		return;
 	}
-
+	printk("CLI: HANDLE STATUS\n");
 	struct bt_mesh_settings_cli *cli = model->user_data;
 	struct bt_mesh_settings_status status;
 

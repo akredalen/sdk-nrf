@@ -39,6 +39,8 @@ void handle_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		return;
 	}
 
+	printk("SRV: HANDLE GET\n");
+
 	struct bt_mesh_settings_srv *srv = model->user_data;
 	struct bt_mesh_settings_status status = { 0 };
 

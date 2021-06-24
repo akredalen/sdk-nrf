@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MSG_AMOUNT 50
+#define MSG_AMOUNT 1
 #define NODES_TOTAL 1
 
 /* Defines number of elements in array */
