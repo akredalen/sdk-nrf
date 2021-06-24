@@ -25,11 +25,14 @@
 #include <logging/log.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
+#include <inttypes.h>
 
-LOG_MODULE_DECLARE(test);
+// #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
+#define LOG_MODULE_NAME latency
 
 static const struct shell *test_shell;
 
+#include "common/log.h"
 #include "pca20036_ethernet.h"
 #include "ethernet_command_system.h"
 #include "ethernet_dfu.h"
@@ -167,7 +170,7 @@ static void setup_cdb(void)
 
 	key = bt_mesh_cdb_app_key_alloc(net_idx, app_idx);
 	if (key == NULL) {
-		printk("Failed to allocate app-key 0x%04x\n", app_idx);
+		BT_WARN("Failed to allocate app-key 0x%04x", app_idx);
 		return;
 	}
 
@@ -277,13 +280,13 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 
 	key = bt_mesh_cdb_app_key_get(app_idx);
 	if (key == NULL) {
-		printk("No app-key 0x%04x\n", app_idx);
+		BT_WARN("No app-key 0x%04x", app_idx);
 		return;
 	}
 
 	// bt_hex(key.keys[0].app_key, 16));
 
-	printk("APP KEY: %u\n", key->keys[0].app_key);
+	BT_DBG("APP KEY: 0x%04x", key->keys[0].app_key);
 
     // err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
 	// 			      app_idx, key->keys[0].app_key, &status);
@@ -314,27 +317,27 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 	err = bt_mesh_cfg_app_key_add(net_idx, own_addr, net_idx,
 				      app_idx, key->keys[0].app_key, &status);
     if (err < 0) {
-            printk("Failed to add application key: %d, %u\n", err, status);
+            BT_WARN("Failed to add application key: %d, %u", err, status);
             }
 
     err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, own_addr, own_addr,
 				       app_idx, BT_MESH_MODEL_ID_SETTINGS_SRV, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
             if (err < 0) {
-                printk("Failed to bind (settings server) to application\n");
+                BT_WARN("Failed to bind (settings server) to application");
             }
 
     /* Tester node will also be using the settings client model */
     if (mac_addresses_are_equal(own_mac, mac_addr_test_node)){
 		role = TESTER_N;
-		printk("Role: 	TESTER NODE\n");
+		BT_DBG("Role: 	TESTER NODE");
 		err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, own_addr, own_addr,
 				       app_idx, BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID, &status);
         if (err < 0) {
-            printk("Failed to bind (settings client) application\n");
+            BT_WARN("Failed to bind (settings client) application");
         }
 	}else{
 		role = FIELD_N;
-		printk("Role: 	FIELD NODE\n");
+		BT_DBG("Role: 	FIELD NODE");
 	}
 
 	atomic_set_bit(self->flags, BT_MESH_CDB_NODE_CONFIGURED);
@@ -343,7 +346,7 @@ static void configure_self(struct bt_mesh_cdb_node *self){
 		bt_mesh_cdb_node_store(self);
 	}
 
-	printk("--- Configuration complete ---\n");
+	printk("\n--- Configuration complete ---\n");
 
 }
 
@@ -354,7 +357,7 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 			configure_self(node);
 		}
 	}else{
-		printk("Node is already configured!\n");
+		BT_DBG("Node is already configured!");
 	}
 
 	return BT_MESH_CDB_ITER_CONTINUE;
@@ -367,19 +370,19 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 static void bt_ready(int err)
 {
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		BT_ERR("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
-	printk("--- Bluetooth initialized ---\n");
+	printk("\n--- Bluetooth initialized ---\n");
 
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
-		printk("Initializing mesh failed (err %d)\n", err);
+		BT_ERR("Initializing mesh failed (err %d)", err);
 		return;
 	}
 
-	printk("--- Mesh initialized ---\n");
+	printk("\n--- Mesh initialized ---\n");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
@@ -390,46 +393,46 @@ static void bt_ready(int err)
 	NetKey for that subnet. */
 	err = bt_mesh_cdb_create(net_key);
 	if (err == -EALREADY) {
-		printk("Using stored CDB\n");
+		BT_DBG("Using stored CDB");
 	} else if (err) {
-		printk("Failed to create CDB (err %d)\n", err);
+		BT_DBG("Failed to create CDB (err %d)", err);
 	} else {
-		printk("Created CDB\n");
+		BT_DBG("Created CDB");
 		setup_cdb();
 	}
 
 	err = fetch_own_mac();
     if (err){
-        printk("Error printing network info\n");
+        BT_WARN("Error printing network info");
     }
     else{
-        printf("\nMAC address: %u:%u:%u:%u:%u:%u\n", \
+        BT_DBG("MAC address: %u:%u:%u:%u:%u:%u", \
         own_mac[0], own_mac[1], own_mac[2], own_mac[3], own_mac[4], own_mac[5]);
     }
 
     err = define_unicast_addr(&own_addr, own_mac);
     if (err){
-        printk("Failed to set Unicast Address\n");
+        BT_WARN("Failed to set Unicast Address");
     }
-    printk("Unicast address: %u\n", own_addr);
+    BT_DBG("Unicast address: 0x%04x", own_addr);
 
     err = define_own_dev_key();
     if (err){
-        printk("Failed to set Device Key\n");
+        BT_WARN("Failed to set Device Key");
     }
 
 	if (bt_mesh_is_provisioned()){
-        printk("Node is already provisioned!\n ");
+        BT_DBG("Node is already provisioned! ");
     }
     else{
-        printk("Provisioning device...\n ");
+        printk("Provisioning device...\n");
         err = bt_mesh_provision(net_key, net_idx, 0, 0, own_addr, dev_key);
         if (err == -EALREADY) {
-		    printk("Using stored settings\n");
+		    BT_DBG("Using stored settings");
 	    } else if (err) {
-		    printk("Provisioning failed (err %d)\n", err);
+		    BT_ERR("Provisioning failed (err %d)", err);
 	    } else {
-		    printk("--- Provisioning completed ---\n");
+		    printk("\n--- Provisioning completed ---\n");
 	    }
     }
 
@@ -451,7 +454,7 @@ int latency_test_run(){
     if(role == TESTER_N){
 		printk("\n");
 	}else{
-		printk("ERROR: can't run latency test from field node!\n");
+		printk("Can't run latency test from field node!\n");
 		return 1;
 	}
 
@@ -467,30 +470,30 @@ int latency_test_run(){
 		define_unicast_addr(&target_addr, target_mac);
 
 		 struct bt_mesh_msg_ctx ctx = {
-                .addr = target_addr,
-				// .addr = own_addr, // test for loopback mode
+                // .addr = target_addr,
+				.addr = own_addr, // # use to test with loopback mode
                 .send_ttl = BT_MESH_TTL_DEFAULT,
                 .app_idx = 0,
         };
 		
 		pub.addr = target_addr;
-		printk("Target address: %u\n", target_addr);
+		BT_DBG("Target address: 0x%04x", target_addr);
         pub.ttl = target_ttl; 
 
-		printk("BEFORE: Settings_cli->pub: %u \n", settings_cli.pub.addr);
-		printk("BEFORE: Settings_cli->mod->pub: %u \n", settings_cli.model->pub->addr);
+		BT_DBG("BEFORE: Settings_cli->pub: 0x%04x", settings_cli.pub.addr);
+		BT_DBG("BEFORE: Settings_cli->mod->pub: 0x%04x", settings_cli.model->pub->addr);
 
         err = bt_mesh_cfg_mod_pub_set_vnd(net_idx, own_addr, own_addr,
          BT_MESH_MODEL_ID_SETTINGS_CLI, BT_MESH_NORDIC_SEMI_COMPANY_ID,
          &pub, NULL);
          
         if (err) {
-			printk("Error: unable to set publication values\n");
+			BT_WARN("Unable to set publication values");
 			return err;
 		}
 
-		printk("AFTER: Settings_cli->pub: %u\n", settings_cli.pub.addr);
-		printk("AFTER: Settings_cli->mod->pub: %u\n", settings_cli.model->pub->addr);
+		BT_DBG("AFTER: Settings_cli->pub: 0x%04x", settings_cli.pub.addr);
+		BT_DBG("AFTER: Settings_cli->mod->pub: 0x%04x", settings_cli.model->pub->addr);
 
 		/* Send messages to node address */
 		for (int j = 0; j < MSG_AMOUNT; j++) {
@@ -498,19 +501,19 @@ int latency_test_run(){
 			struct bt_mesh_settings_status rsp;
 
 			out_time = k_uptime_get();
-			// settings_cli.model->pub = target_addr;
-			err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &rsp);
+			err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &rsp); // # use for ctx
+			// err = bt_mesh_settings_cli_get(&settings_cli, NULL, &rsp); // # use for pub
 
 			/* Blocking while waiting for response... */
 			if (err < 0){
                 lost_msg_count++;
-				printk("ERROR %d: latency message nr. %d failed.\nTotal lost messages: %d \n", err, j+1, lost_msg_count);
+				BT_WARN("(erro: %d): Latency message nr. %d failed.\nTotal lost messages: %d", err, j+1, lost_msg_count);
 			}
 			else{
 				/* Response is received. Record new time-stamp */
 				in_time = k_uptime_get();
 				rtt = in_time - out_time;
-				printk("Round-trip time: %lld \n", rtt);
+				printk("Round-trip time:" "%" PRId64 "\n", rtt);
 
 				// DO: send response over ethernet...
 			}
@@ -532,23 +535,23 @@ void main(void)
 	shell_print(test_shell, ">>> Bluetooth Mesh TEST sample <<<");
 
 	printk("- Latency Test for PCA20036 -\n");
-	printk("- DFU Version: %d -\n", DFU_APP_VERSION);
+	BT_INFO("- DFU Version: %d -", DFU_APP_VERSION);
 
 	err = hp_led_init();
 
 	if (err) {
-		printk("Error initializing HP LED\n");
+		BT_WARN("Error initializing HP LED");
 	}
 
 	err = pca20036_ethernet_init();
 
 	if (err) {
-		printk("Error initializing buttons\n");
+		BT_WARN("Error initializing buttons");
 	}
 
 	ethernet_rx_work_init_start();
 
-	printk("- Initiated -\n");
+	printk("\n- Ethernet initiated -\n");
 
 	/* DHCP may not be leased yet - check flag */
 
@@ -557,9 +560,8 @@ void main(void)
 	/* Initialize BT Mesh, provision and configure local device */
 	err = bt_enable(NULL);
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		BT_ERR("Bluetooth init failed (err %d)", err);
 	}
 
 	bt_ready(0);
-	
 }
