@@ -441,9 +441,12 @@ int latency_test_run(){
 		target_ttl = node_data_mac_ttl[i].ttl;
 		define_unicast_addr(&target_addr, target_mac);
 
+		BT_DBG("MAC address (target): %02X:%02X:%02X:%02X:%02X:%02X", \
+        target_mac[0], target_mac[1], target_mac[2], target_mac[3], target_mac[4], target_mac[5]);
+
 		 struct bt_mesh_msg_ctx ctx = {
-                // .addr = target_addr,
-				.addr = own_addr, // # use to test with loopback mode
+                .addr = target_addr,
+				// .addr = own_addr, // # use to test with loopback mode
                 .send_ttl = BT_MESH_TTL_DEFAULT,
                 .app_idx = 0,
         };
@@ -473,8 +476,8 @@ int latency_test_run(){
 			struct bt_mesh_settings_status rsp;
 
 			out_time = k_uptime_get();
-			err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &rsp); // # use for ctx
-			// err = bt_mesh_settings_cli_get(&settings_cli, NULL, &rsp); // # use for pub
+			// err = bt_mesh_settings_cli_get(&settings_cli, &ctx, &rsp); // # use for ctx
+			err = bt_mesh_settings_cli_get(&settings_cli, NULL, &rsp); // # use for pub
 
 			/* Blocking while waiting for response... */
 			if (err < 0){
@@ -485,7 +488,7 @@ int latency_test_run(){
 				/* Response is received. Record new time-stamp */
 				in_time = k_uptime_get();
 				rtt = in_time - out_time;
-				printk("Round-trip time: %d ms\n", (int32_t) rtt);
+				printk("RTT for message nr. %d: %d ms\n", j, (int32_t) rtt);
 
 				// DO: send response over ethernet...
 			}

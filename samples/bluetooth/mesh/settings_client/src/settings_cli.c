@@ -73,8 +73,6 @@ int bt_mesh_settings_cli_get(struct bt_mesh_settings_cli *cli,
 		
     bt_mesh_model_msg_init(&msg, BT_MESH_DEVICE_SETTINGS_GET_OP);
 
-	printk("### inside _settings_cli_get");
-
 	return model_ackd_send(cli->model, ctx, &msg,
 			       rsp ? &cli->ack_ctx : NULL,
 			       BT_MESH_DEVICE_SETTINGS_STATUS_OP, rsp);

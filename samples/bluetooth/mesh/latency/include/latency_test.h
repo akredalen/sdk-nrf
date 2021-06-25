@@ -23,7 +23,8 @@
 static uint8_t mac_addr_test_node[6] = {0xB0, 0x0A, 0x75, 0xA2, 0xDF, 0x53};
 // 17 ---> B0:0A:75:A2:DF:53  (TESTER NODE)
 // 15 ---> B0:EE:2F:91:30:5A  (1. FIELD NODE)   Unicast address: 16744 / 0x4168
-
+// 2 ---> B0:75:7F:01:64:3B (2. FIELD NODE)
+// 12 --->  B0:74:07:DF:98:60 (3. FIELD NODE)
 static struct Node_data{
     uint8_t mac_address[6];
     uint8_t ttl;
