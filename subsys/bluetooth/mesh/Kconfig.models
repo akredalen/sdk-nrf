@@ -57,6 +57,18 @@ config BT_MESH_ONOFF_CLI
 	help
 	  Enable mesh Generic OnOff Client model.
 
+config BT_MESH_TXP_SRV
+	bool "Device Settings Server"
+	select BT_MESH_NRF_MODELS
+	help
+	  Enable mesh Settings Server model.
+
+config BT_MESH_TXP_CLI
+	bool "Device Settings Client"
+	select BT_MESH_NRF_MODELS
+	help
+	  Enable mesh Settings Client model.
+
 config BT_MESH_TIME
 	bool
 
