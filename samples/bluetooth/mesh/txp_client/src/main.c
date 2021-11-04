@@ -17,9 +17,6 @@
 #include <shell/shell_uart.h>
 #include <sys/util.h>
 
-#include "txp_settings_cli.h"
-#include "txp_settings.h"
-
 #define LOG_MODULE_NAME txp_cli
 #include "common/log.h"
 
@@ -158,6 +155,20 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
+static int bt_mesh_txp_cli_init(struct bt_mesh_model *model)
+{
+	struct bt_mesh_txp_cli *cli = model->user_data;
+
+	cli->model = model;
+	net_buf_simple_init(cli->pub.msg, 0);
+
+	return 0;
+}
+
+const struct bt_mesh_model_cb _bt_mesh_txp_cli_cb = {
+	.init = bt_mesh_txp_cli_init,
+};
+
 ///////////////////////////////// CONFIG ////////////////////////////////////
 
 static void configure_self(struct bt_mesh_cdb_node *self)
@@ -226,7 +237,7 @@ static uint8_t check_unconfigured(struct bt_mesh_cdb_node *node, void *data)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-////////////////////// MODEL CALLBACKS AND FUNCTIONALITY ///////////////////////
+////////////////////// MODEL CALLBACKS AND FUNCTIONALITY ///////////////////
 ////////////////////////////////////////////////////////////////////////////
 
 static void status_handler(struct bt_mesh_txp_cli *cli, struct bt_mesh_msg_ctx *ctx,
@@ -249,7 +260,7 @@ static void txp_cli_send_msg_pub(int8_t txp_val)
 {
 	int err;
 	set_msg.txp_value = txp_val;
-	err = bt_mesh_txp_cli_set(&txp_cli, NULL, &set_msg, NULL);
+	err = bt_mesh_txp_cli_set_ack(&txp_cli, NULL, &set_msg);
 
 	if (err) {
 		printk("Settings SET message failed: %d\n", err);
@@ -290,7 +301,7 @@ static void button_handler_cb(uint32_t pressed, uint32_t changed)
 
 		/** Button 3 (Get TX Power from server) */
 		else if (i == 2) {
-			err = bt_mesh_txp_cli_get(&txp_cli, NULL, NULL);
+			err = bt_mesh_txp_cli_get(&txp_cli, NULL);
 			return;
 		}
 
@@ -343,7 +354,7 @@ static int cmd_get_txp(const struct shell *shell, size_t argc, char *argv[])
 {
 	shell_print(shell, "Getting current TXP status from network...", argv[1]);
 	int err;
-	err = bt_mesh_txp_cli_get(&txp_cli, NULL, NULL);
+	err = bt_mesh_txp_cli_get(&txp_cli, NULL);
 	return 0;
 }
 

@@ -10,10 +10,8 @@ project(NONE)
 
 target_sources(app PRIVATE
 	src/main.c
-	src/common//txp_settings_cli.c
-	src/common/txp_settings_srv.c)
-target_include_directories(app PRIVATE include
-	./include/common)
+	../../../../subsys/bluetooth/mesh/txp_settings_cli.c)
+target_include_directories(app PRIVATE include)
 
 zephyr_library_include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}

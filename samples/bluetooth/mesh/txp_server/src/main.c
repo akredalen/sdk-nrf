@@ -33,9 +33,6 @@
 #include <dk_buttons_and_leds.h>
 #include <bluetooth/mesh/cfg_cli.h>
 
-#include <txp_settings_srv.h>
-#include <txp_settings.h>
-
 #define LOG_MODULE_NAME txp_srv
 #include "common/log.h"
 
@@ -133,10 +130,10 @@ static void set_led_indicator(int8_t val){
 	
 	if (val == 4){
 		dk_set_leds_state(DK_ALL_LEDS_MSK, DK_NO_LEDS_MSK);
-	}else if (val >= -16 && val < 4){ // [-16, 3)
+	}else if (val > -16 && val < 4){ // [-15, 3)
 		dk_set_leds_state((DK_LED1_MSK | DK_LED2_MSK |\
 		DK_LED3_MSK), DK_LED4_MSK);
-	}else if (val > -40 && val < 16){ // [-39, -17)
+	}else if (val > -40 && val <= 16){ // [-39, -16)
 		dk_set_leds_state((DK_LED1_MSK | DK_LED2_MSK ), (DK_LED3_MSK | DK_LED4_MSK));
 	}else if (val == -40){
 		dk_set_leds_state((DK_LED1_MSK), (DK_LED2_MSK | DK_LED3_MSK |\

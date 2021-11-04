@@ -5,7 +5,6 @@
  */
 
 #include <string.h>
-#include "txp_settings_srv.h"
 #include "model_utils.h"
 #include <bluetooth/mesh/models.h>
 
@@ -65,31 +64,26 @@ static void set_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 	struct bt_mesh_txp_set set;
 
 	uint8_t msg = net_buf_simple_pull_u8(buf);
-	uint8_t tid = net_buf_simple_pull_u8(buf);
 
 	set.txp_value = msg;
 
-	if (tid_check_and_update(&srv->prev_transaction, tid, ctx) != 0) {
-		/* If this is the same transaction, we don't need to send it
-		 * to the app, but we still have to respond with a status.
-		 */
-		srv->handlers->get(srv, NULL, &status);
-		goto respond;
-	}
-
 	srv->handlers->set(srv, ctx, &set, &status);
 
-respond:
 	if (ack) {
 		rsp_status(model, ctx, &status);
 	}
 }
 
-/* Gives optional ack */
-void handle_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+void handle_set_ack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		struct net_buf_simple *buf)
 {
 	set_handler(model, ctx, buf, true);
+}
+
+void handle_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		struct net_buf_simple *buf)
+{
+	set_handler(model, ctx, buf, false);
 }
 
 static int bt_mesh_txp_srv_init(struct bt_mesh_model *model)
@@ -105,8 +99,9 @@ static int bt_mesh_txp_srv_init(struct bt_mesh_model *model)
 const struct bt_mesh_model_cb _bt_mesh_txp_srv_cb = { .init = bt_mesh_txp_srv_init };
 
 const struct bt_mesh_model_op _bt_mesh_txp_srv_op[] = {
-	{ BT_MESH_DEVICE_TXP_GET_OP, BT_MESH_DEVICE_TXP_MSG_LEN_GET, handle_get },
-	{ BT_MESH_DEVICE_TXP_SET_OP, BT_MESH_DEVICE_TXP_MSG_MINLEN_SET, handle_set },
+	{ BT_MESH_DEVICE_TXP_GET_OP, BT_MESH_DEVICE_TXP_MSG_LEN_GET, handle_get, },
+	{ BT_MESH_DEVICE_TXP_SET_ACK_OP, BT_MESH_DEVICE_TXP_MSG_MINLEN_SET, handle_set_ack, },
+	{ BT_MESH_DEVICE_TXP_SET_UNACK_OP, BT_MESH_DEVICE_TXP_MSG_MINLEN_SET, handle_set_unack, },
 
 	BT_MESH_MODEL_OP_END,
 };

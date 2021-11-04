@@ -1,26 +1,26 @@
-Bluetooth Mesh: (Device) Settings Client
+Bluetooth Mesh: (Device) TXP Client
 ############################
 
-The Bluetooth Mesh Settings sample gives an example on how to change device settings (in this case TX power) with Bluetooth Mesh using the Settings Model. 
-The Settings Client is able to decrease or increase the TXP value on the Settings Server, and fetching its status, by using the client-side buttons. 
+
+The Bluetooth Mesh TXP sample provides the functionality of changing a node's transmit power (TXP) TXP.
+The TXP Client is able to set or get the TXP value on the TXP server(s), and fetching its status, by using the client-side buttons or UART commands. 
 
 Overview
 ********
 
-This sample is split into three source files:
+This sample contains the following source files:
 
-* A :file:`main.c` file to handle initialization.
-* One file for handling Mesh models, :file:`model_handler.c`.
+* A :file:`main.c` file to handle initialization, provisioning and handling Mesh models.
 
 Provisioning
 ============
 
-Use the nRF Mesh App for Provisioning. 
+Self-provision on boot. 
 
 Models
 ======
 
-The following table shows the Settings composition data for this sample:
+The following table shows the TXP composition data for this sample:
 
 .. table::
    :align: center
@@ -30,21 +30,15 @@ The following table shows the Settings composition data for this sample:
    =====================
    Config Server      
    Health Server
-   Mesh Settings Client
+   Mesh TXP Client
    =====================
 
 The models are used for the following purposes:
 
-* Mesh Settings Client is controlled by buttons 1 to 3 on the development kit.
+* Mesh TXP Client controls the TX power value on the bound servers.
 * Config Server allows configurator devices to configure the node remotely.
-* Health Server provides ``attention`` callbacks that are used during provisioning to call your attention to the device.
-  These callbacks trigger blinking of the LEDs.
 
-The model handling is implemented in :file:`src/model_handler.c`, which uses the :ref:`dk_buttons_and_leds_readme` library to detect button presses on the board.
-
-If the model is configured to publish to a unicast address, the model handler calls :c:func:`bt_mesh_settings_cli_set` to change the TX power value on a Mesh Settings Server device.
-The target device sends a response to the client (output to kernel log). 
-Group targets can be configured in the nRF Mesh App. 
+The model handling is implemented in :file:`src/main.c`. 
 
 Requirements
 ************
@@ -55,80 +49,30 @@ The sample supports the following development kits:
    :header: heading
    :rows: nrf52840dk_nrf52840, nrf52dk_nrf52832
 
-The sample requires a smartphone with Nordic Semiconductor's nRF Mesh mobile app installed in one of the following versions:
-
-  * `nRF Mesh mobile app for Android`_
-  * `nRF Mesh mobile app for iOS`_
-
-An additional requirement is the :ref:`bluetooth_mesh_settings_server` sample application programmed on a separate device and configured according to the Mesh Settings Server sample discription. 
-
 User interface
 **************
 
-Buttons:
-   Buttons are used to control the Settings Client:
+BUTTONS:
+   [BUTTON 1]:    Decrease the TXP level on servers
+   [BUTTON 2]:    Increase the TXP level on servers
+   [BUTTON 3]:    Get the current TXP state from servers
 
-   * Button 1: When pressed, the button increases the TXP level on the server device by 
-   incrementing the index in the array {-40, -30, -20, -16, -8, -4, 0, 4} and sending a set-message to the server with this new value.
-
-   * Button 2: When pressed, the button decreases the TXP level on the server device by 
-   decrementing the index in the array {-40, -30, -20, -16, -8, -4, 0, 4} and sending a set-message to the server with this new value.
-
-   * Button 3: Fetches the current state (TXP value) of the server. 
-
+UART cmds:
+   Set TX Power on remote servers:           >>  txp set <value [-40, 4]>
+   Get the current TX Power from servers:    >>  txp get
+   Print network info:                       >>  txp net
+   Print all commands:                       >>  txp help 
 
 Building and running
 ********************
 
-.. |sample path| replace:: :file:`samples/bluetooth/mesh/settings_client`
+.. |sample path| replace:: :file:`samples/bluetooth/mesh/txp_settings_srv`
 
 Testing
 =======
 
-.. important::
-   The Settings Client sample cannot demonstrate any functionality on its own, and needs a device with the :ref:`bluetooth_mesh_settings_server` sample running in the same mesh network.
-   Before testing Mesh Settings Client, set up the Settings Server sample on another device and connect it to the network. 
+After programming the sample to your board, the device is ready to remote control the configured server nodes. 
 
-After programming the sample to your board, you can test it by using a smartphone with Nordic Semiconductor's nRF Mesh app installed.
-Testing consists of provisioning the device and configuring it for communication with the mesh models.
-
-Provisioning the device
------------------------
-
-The provisioning assigns an address range to the device, and adds it to the mesh network.
-Complete the following steps in the nRF Mesh app:
-
-1. Tap :guilabel:`Add node` to start scanning for unprovisioned mesh devices.
-#. Select the :guilabel:`Mesh Settings Client` device to connect to it.
-#. Tap :guilabel:`Identify` and then :guilabel:`Provision` to provision the device.
-#. When prompted, select the OOB method and follow the instructions in the app.
-
-Once the provisioning and initial configuration is complete, the app will go back to the Network screen.
-
-Configuring models
-------------------
-
-Complete the following steps in the nRF Mesh app to configure models:
-
-1. On the Network screen, tap the :guilabel:`Mesh Settings Client` node.
-   Basic information about the mesh node and its configuration is displayed.
-#. In the Mesh node view, expand the first element.
-   It contains the list of models in the first element of the node.
-#. Tap :guilabel:`Settings Client` to see the model's configuration.
-#. Bind the model to application keys to make it open for communication:
-
-   1. Tap :guilabel:`BIND KEY` at the top of the screen.
-   #. Select :guilabel:`Application Key 1` from the list.
-
-#. Configure the Client model publish parameters, which define how the model will send its messages:
-
-   1. Tap :guilabel:`SET PUBLICATION`.
-   #. Set the Publish Address to the first unicast address of the Settings Server node, or choose a group.
-   #. Set the Retransmit Count to zero (:guilabel:`Disabled`) to prevent the model from sending each button press multiple times.
-   #. Leave the rest of the publish parameters at their default values.
-   #. Tap :guilabel:`APPLY` to confirm the configuration.
-
-You are now be able to control the TX Power on the Mesh Settings Server device by pressing Buttons 1-2 (3) on the Mesh Settings Client development kit.
 
 Dependencies
 ************
