@@ -1,0 +1,145 @@
+#
+# Copyright (c) 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "MQTT simple sample"
+config MQTT_PUB_TOPIC
+	string "MQTT publish topic"
+	default "my/publish/topic"
+
+config MQTT_SUB_TOPIC
+	string "MQTT subscribe topic"
+	default "my/subscribe/topic"
+
+config MQTT_CLIENT_ID
+	string "MQTT Client ID"
+	help
+	  Use a custom Client ID string. If not set, the client ID will be
+	  generated based on IMEI number (for nRF9160 based targets) or
+	  randomly (for other platforms).
+	default ""
+
+config MQTT_BROKER_HOSTNAME
+	string "MQTT broker hostname"
+	default "mqtt.eclipseprojects.io"
+
+config MQTT_BROKER_PORT
+	int "MQTT broker port"
+	default 1883
+
+config MQTT_MESSAGE_BUFFER_SIZE
+	int "MQTT message buffer size"
+	default 128
+
+config MQTT_PAYLOAD_BUFFER_SIZE
+	int "MQTT payload buffer size"
+	default 128
+
+config BUTTON_EVENT_PUBLISH_MSG
+	string "The message to publish on a button event"
+	default "Hello from nRF91 MQTT Simple Sample"
+
+config BUTTON_EVENT_BTN_NUM
+	int "The button number"
+	default 1
+
+config MQTT_RECONNECT_DELAY_S
+	int "Seconds to delay before attempting to reconnect to the broker"
+	default 60
+
+config LTE_CONNECT_RETRY_DELAY_S
+	int "Seconds to delay before attempting to retry LTE connection"
+	default 120
+
+config MQTT_TLS_SEC_TAG
+	int "TLS credentials security tag"
+	default 24
+
+config MQTT_TLS_SESSION_CACHING
+	bool "Enable TLS session caching"
+
+config MQTT_TLS_PEER_VERIFY
+	int "Set peer verification level"
+	default 2
+	help
+		Set to 0 for VERIFY_NONE, 1 for VERIFY_OPTIONAL, and 2 for
+		VERIFY_REQUIRED.
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
+
+
+
+menuconfig EMDS
+	bool "Emergency Data Storage [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on PARTITION_MANAGER_ENABLED
+	depends on FLASH_MAP
+	default n
+	help
+	  Enable Emergency Data Storage
+
+if EMDS
+
+config EMDS_SECTOR_COUNT
+	int "Sector count of the emergency data storage area"
+	default 1
+	help
+	  Number of sectors used for the emergency data storage area
+
+config EMDS_THREAD_STACK_SIZE
+	int "Stack size for the emergency data storage thread"
+	default 500
+	help
+	  Size of the stack that is initialized by the emergency data storage
+
+config EMDS_THREAD_PRIORITY
+	int "Priority for the emergency data storage thread"
+	default 0
+	help
+	  Cooperative priority for the emergency data storage thread. This will
+	  be used through K_PRIO_COOP(x), that means higher value gives lower
+	  priority.
+
+config EMDS_FLASH_TIME_WRITE_ONE_WORD_US
+	int "Time to write one word into flash"
+	default 43
+	help
+	  Max time to write one word (4 bytes) in flash (in microseconds). This
+	  value is dependent on the chip used, and should be checked against the
+	  chip datasheet.
+
+config EMDS_FLASH_TIME_ENTRY_OVERHEAD_US
+	int "Time to schedule write of one entry"
+	default 300
+	help
+	   Max time to prepare the write of each entry (in microseconds).
+
+config EMDS_FLASH_TIME_BASE_OVERHEAD_US
+	int "Time to schedule the store process"
+	default 85000 if SETTINGS && !SOC_FLASH_NRF_PARTIAL_ERASE
+	default 9000 if SETTINGS && SOC_FLASH_NRF_PARTIAL_ERASE
+	default 500
+	help
+	   Max time to prepare the store process (in microseconds). If used
+	   together with SETTINGS this value has to be at least as long as the
+	   time to erase one page (ERASEPAGE). If used together with
+	   SOC_FLASH_NRF_PARTIAL_ERASE this value should be
+	   (SOC_FLASH_NRF_PARTIAL_ERASE_MS * 1000 * 3). This is to account for
+	   worst case scenario, before starting storing entries. This value
+	   is dependent on the chip used, and should be checked against the chip
+	   datasheet.
+
+endif # EMDS
+
+
+
+
+module = MQTT_SIMPLE
+module-str = MQTT Simple
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
