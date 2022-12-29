@@ -1,0 +1,17 @@
+*Reported issue*:
+Device "bricks" after EMDS is performed 5 times (6th try is unsuccessful). The first call happens during the initial boot.
+
+main.c is the file that the customer provided. main_new.c is used only for experimenting.
+
+*Update*: 
+The "bricking of the device" is due to the application freezing during the execution of the code in z_arm_reset () at /zephyr/arch/arm/core/aarch32/cortex_m/reset.S:80
+See debug_session_0.txt and debug_sess_wo_thread_info.txt for full debug logging.
+
+About this function: The reset vector is typically defined in a file called reset.S and consists of a single function called _start, which is responsible for setting up the initial stack and calling the main function of the program. In the case of Zephyr, this function is implemented in assembly language and is located in the reset.S file in the arch directory of the Zephyr source tree.
+
+Possible reasons for behavior: hard fault, a watchdog reset, or a debug halt.
+
+*Solution (not complete)*: This behaviour is only present when building the application with non-secure firmware (west build -b nrf9160dk_nrf9160_ns). The client wants to use nrf_modem_lib must be run as non-secure firmware. The fault is not present with secure build for 9160. 
+At this time, it is unsure why this is.
+
+Note: Tested: The light control sample, building for nRF52840 has no issues with using EMDS. 

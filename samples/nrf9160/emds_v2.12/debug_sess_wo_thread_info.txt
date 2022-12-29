@@ -1,0 +1,126 @@
+#0  z_arm_reset ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:80
+Dump of assembler code for function z_arm_reset:
+=> 0x0000ad14 <+0>:	movs	r0, #0
+   0x0000ad16 <+2>:	msr	CONTROL, r0
+   0x0000ad1a <+6>:	isb	sy
+   0x0000ad1e <+10>:	movs	r0, #0
+   0x0000ad20 <+12>:	msr	MSPLIM, r0
+   0x0000ad24 <+16>:	msr	PSPLIM, r0
+   0x0000ad28 <+20>:	bl	0x9af0 <z_arm_platform_init>
+   0x0000ad2c <+24>:	movs	r0, #0
+   0x0000ad2e <+26>:	ldr	r1, [pc, #56]	; (0xad68 <z_arm_reset+84>)
+   0x0000ad30 <+28>:	str	r0, [r1, #0]
+   0x0000ad32 <+30>:	dsb	sy
+   0x0000ad36 <+34>:	ldr	r0, [pc, #52]	; (0xad6c <z_arm_reset+88>)
+   0x0000ad38 <+36>:	msr	MSP, r0
+   0x0000ad3c <+40>:	bl	0xad98 <z_arm_init_arch_hw_at_boot>
+   0x0000ad40 <+44>:	movs	r0, #32
+   0x0000ad42 <+46>:	msr	BASEPRI, r0
+   0x0000ad46 <+50>:	ldr	r0, [pc, #40]	; (0xad70 <z_arm_reset+92>)
+   0x0000ad48 <+52>:	mov.w	r1, #2048	; 0x800
+   0x0000ad4c <+56>:	adds	r0, r0, r1
+   0x0000ad4e <+58>:	msr	PSP, r0
+   0x0000ad52 <+62>:	mrs	r0, CONTROL
+   0x0000ad56 <+66>:	movs	r1, #2
+   0x0000ad58 <+68>:	orrs	r0, r1
+   0x0000ad5a <+70>:	msr	CONTROL, r0
+   0x0000ad5e <+74>:	isb	sy
+   0x0000ad62 <+78>:	bl	0xa6fc <z_arm_prep_c>
+   0x0000ad66 <+82>:	movs	r0, r0
+   0x0000ad68 <+84>:			; <UNDEFINED> instruction: 0xed94e000
+   0x0000ad6c <+88>:	ubfx	r0, r0, #8, #1
+   0x0000ad70 <+92>:	bge.n	0xac74 <z_arm_fault+392>
+   0x0000ad72 <+94>:	movs	r0, #0
+End of assembler dump.
+r0             0xffffffff          4294967295
+r1             0xff000             1044480
+r2             0x40039000          1073975296
+r3             0x0                 0
+r4             0x2000c590          536921488
+r5             0xff000             1044480
+r6             0x1000              4096
+r7             0x100000            1048576
+r8             0x2c8               712
+r9             0x2000f360          536933216
+r10            0x2000f358          536933208
+r11            0x8                 8
+r12            0xbe15              48661
+sp             0x20000bf8          0x20000bf8
+lr             0x1081              4225
+pc             0xad14              0xad14 <z_arm_reset>
+xpsr           0x1000005           16777221
+msp            0x20000c00          536873984
+psp            0x0                 0
+primask        0x0                 0
+basepri        0x0                 0
+faultmask      0x0                 0
+control        0x0                 0
+fpscr          0x0                 0
+msp_s          0x20000c00          536873984
+msplim_s       0x0                 0
+psp_s          0x0                 0
+psplim_s       0x0                 0
+msp_ns         0x0                 0
+msplim_ns      0x0                 0
+psp_ns         0x2000f308          536933128
+psplim_ns      0x0                 0
+control_s      0x0                 0
+faultmask_s    0x0                 0
+basepri_s      0x0                 0
+primask_s      0x0                 0
+control_ns     0x0                 0
+faultmask_ns   0x0                 0
+basepri_ns     0x0                 0
+primask_ns     0x0                 0
+z_arm_reset () at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:81
+81	    msr CONTROL, r0
+82	    isb
+85	    movs.n r0, #0
+86	    msr MSPLIM, r0
+87	    msr PSPLIM, r0
+97	    bl z_arm_platform_init
+103	    movs.n r0, #0
+104	    ldr r1, =_SCS_MPU_CTRL
+105	    str r0, [r1]
+106	    dsb
+108	    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
+109	    msr msp, r0
+z_arm_reset () at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:112
+112	    bl z_arm_init_arch_hw_at_boot
+119	    movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
+120	    msr BASEPRI, r0
+149	    ldr r0, =z_interrupt_stacks
+150	    ldr r1, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
+151	    adds r0, r0, r1
+152	    msr PSP, r0
+153	    mrs r0, CONTROL
+154	    movs r1, #2
+155	    orrs r0, r1 /* CONTROL_SPSEL_Msk */
+156	    msr CONTROL, r0
+z_arm_reset () at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:162
+162	    isb
+169	    bl z_arm_prep_c
+
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0xeffffffe in ?? ()
+Cannot find bounds of current function
+#0  0xeffffffe in ?? ()
+#1  0x0000ab50 in z_arm_fault (msp=<optimized out>, psp=536928680, 
+    exc_return=<optimized out>, callee_regs=<optimized out>)
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/fault.c:1029
+#2  0x0000acf8 in z_arm_usage_fault ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/fault_s.S:102
+#3  <signal handler called>
+#4  assert_post_action (file=0x4 "E\001", 
+    file@entry=0x14a6d "WEST_TOPDIR/zephyr/arch/arm/core/aarch32/cortex_m/fault.c", line=line@entry=1029) at /home/stak/git_repos/ncs/zephyr/lib/os/assert.c:43
+#5  0x0000ab50 in z_arm_fault (msp=<optimized out>, psp=536928680, 
+    exc_return=<optimized out>, callee_regs=<optimized out>)
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/fault.c:1029
+#6  0x0000acf8 in z_arm_usage_fault ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/fault_s.S:102
+#7  <signal handler called>
+#8  0x00009ac8 in nordicsemi_nrf91_init (arg=0x405)
+    at /home/stak/git_repos/ncs/zephyr/soc/arm/nordic_nrf/nrf91/soc.c:47
+#9  0x80000000 in ?? ()
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)

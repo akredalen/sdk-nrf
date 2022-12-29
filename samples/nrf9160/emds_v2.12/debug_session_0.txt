@@ -1,0 +1,97 @@
+Already logging to log.txt.
+#0  z_arm_reset ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:73
+#0  z_arm_reset ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:73
+73	    movs.n r0, #0
+r0             0xffffffff          4294967295
+r1             0xff000             1044480
+r2             0x40039000          1073975296
+r3             0x0                 0
+r4             0x2000c590          536921488
+r5             0xff000             1044480
+r6             0x1000              4096
+r7             0x100000            1048576
+r8             0x2c8               712
+r9             0x2000f410          536933392
+r10            0x2000f408          536933384
+r11            0x8                 8
+r12            0xbe2d              48685
+sp             0x20000bf8          0x20000bf8
+lr             0x1081              4225
+pc             0xad24              0xad24 <z_arm_reset>
+xpsr           0x1000005           16777221
+msp            0x20000c00          536873984
+psp            0x0                 0
+primask        0x0                 0
+basepri        0x0                 0
+faultmask      0x0                 0
+control        0x0                 0
+fpscr          0x0                 0
+msp_s          0x20000c00          536873984
+msplim_s       0x0                 0
+psp_s          0x0                 0
+psplim_s       0x0                 0
+msp_ns         0x0                 0
+msplim_ns      0x0                 0
+psp_ns         0x2000f3b8          536933304
+psplim_ns      0x0                 0
+control_s      0x0                 0
+faultmask_s    0x0                 0
+basepri_s      0x0                 0
+primask_s      0x0                 0
+control_ns     0x0                 0
+faultmask_ns   0x0                 0
+basepri_ns     0x0                 0
+primask_ns     0x0                 0
+Dump of assembler code for function z_arm_reset:
+=> 0x0000ad24 <+0>:	movs	r0, #0
+   0x0000ad26 <+2>:	ldr	r1, [pc, #84]	; (0xad7c <z_arm_reset+88>)
+   0x0000ad28 <+4>:	strb	r0, [r1, #0]
+   0x0000ad2a <+6>:	movs	r0, #0
+   0x0000ad2c <+8>:	msr	CONTROL, r0
+   0x0000ad30 <+12>:	isb	sy
+   0x0000ad34 <+16>:	movs	r0, #0
+   0x0000ad36 <+18>:	msr	MSPLIM, r0
+   0x0000ad3a <+22>:	msr	PSPLIM, r0
+   0x0000ad3e <+26>:	bl	0x9af0 <z_arm_platform_init>
+   0x0000ad42 <+30>:	movs	r0, #0
+   0x0000ad44 <+32>:	ldr	r1, [pc, #56]	; (0xad80 <z_arm_reset+92>)
+   0x0000ad46 <+34>:	str	r0, [r1, #0]
+   0x0000ad48 <+36>:	dsb	sy
+   0x0000ad4c <+40>:	ldr	r0, [pc, #52]	; (0xad84 <z_arm_reset+96>)
+   0x0000ad4e <+42>:	msr	MSP, r0
+   0x0000ad52 <+46>:	bl	0xadb0 <z_arm_init_arch_hw_at_boot>
+   0x0000ad56 <+50>:	movs	r0, #32
+   0x0000ad58 <+52>:	msr	BASEPRI, r0
+   0x0000ad5c <+56>:	ldr	r0, [pc, #40]	; (0xad88 <z_arm_reset+100>)
+   0x0000ad5e <+58>:	mov.w	r1, #2048	; 0x800
+   0x0000ad62 <+62>:	adds	r0, r0, r1
+   0x0000ad64 <+64>:	msr	PSP, r0
+   0x0000ad68 <+68>:	mrs	r0, CONTROL
+   0x0000ad6c <+72>:	movs	r1, #2
+   0x0000ad6e <+74>:	orrs	r0, r1
+   0x0000ad70 <+76>:	msr	CONTROL, r0
+   0x0000ad74 <+80>:	isb	sy
+   0x0000ad78 <+84>:	bl	0xa6fc <z_arm_prep_c>
+   0x0000ad7c <+88>:	blt.n	0xadd8 <z_arm_init_arch_hw_at_boot+40>
+   0x0000ad7e <+90>:	movs	r0, #0
+   0x0000ad80 <+92>:			; <UNDEFINED> instruction: 0xed94e000
+   0x0000ad84 <+96>:	orns	r0, r0, #524288	; 0x80000
+   0x0000ad88 <+100>:	blt.n	0xadec <z_arm_init_arch_hw_at_boot+60>
+   0x0000ad8a <+102>:	movs	r0, #0
+End of assembler dump.
+Working directory /home/stak/git_repos/ncs/nrf/samples/nrf9160/emds_v2.12.
+[New Remote target]
+[New Thread 536921800]
+[New Thread 536922176]
+
+Thread 2 received signal SIGTRAP, Trace/breakpoint trap.
+[Switching to Thread 536921984]
+z_arm_reset () at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:74
+74	    ldr r1, =z_sys_post_kernel
+#0  z_arm_reset ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:74
+#0  z_arm_reset ()
+    at /home/stak/git_repos/ncs/zephyr/arch/arm/core/aarch32/cortex_m/reset.S:74
+74	    ldr r1, =z_sys_post_kernel

@@ -145,8 +145,11 @@ int emds_store(void)
 		return -ECANCELED;
 	}
 
+	printk("EMDS_STORE()\n");
+
 	/* Lock all interrupts */
 	store_key = irq_lock();
+	printk("CHECKPOINT 0\n");
 
 	/* Start the emergency data storage process. */
 	LOG_DBG("Emergency Data Storeage released");
@@ -162,6 +165,7 @@ int emds_store(void)
 				ch->id, ch->len, len);
 		}
 	}
+	printk("CHECKPOINT 1\n");
 
 	struct emds_dynamic_entry *ch;
 
@@ -177,6 +181,7 @@ int emds_store(void)
 				ch->entry.id, ch->entry.len, len);
 		}
 	}
+	printk("CHECKPOINT 2\n");
 
 	emds_ready = false;
 
