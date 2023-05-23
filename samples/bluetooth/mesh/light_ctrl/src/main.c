@@ -39,6 +39,10 @@ static void button_handler_cb(uint32_t pressed, uint32_t changed)
 
 static void app_emds_cb(void)
 {
+	/* Note: This message will not be printed when the CONFIG_LOG_MODE_DEFERRED is enabled.
+	 * Disable CONFIG_LOG_MODE_DEFERRED to see the message print. However, deffered logging
+	 * helps improve LPN power consumption when friendship is established.
+	 */
 	printk("SAMPLE HALTED!!!\n");
 	dk_set_leds(DK_LED2_MSK | DK_LED3_MSK | DK_LED4_MSK);
 	k_fatal_halt(K_ERR_CPU_EXCEPTION);

@@ -188,7 +188,7 @@ After programming the sample to your development kit, you can test it by using a
 Testing consists of provisioning the device and configuring it for communication with the mesh models.
 
 When the development kit is started, it will keep its previous Light state as the ``BT_MESH_ON_POWER_UP_RESTORE`` is set for the :ref:`bt_mesh_lightness_srv_readme`.
-When :ref:`emds_readme` is enabled it is important that the **Button 4** is used to store the data before the development kit is halted and then restarted.
+When :ref:`emds_readme` is enabled it is important that the **Button 4** is used to store the data before the development kit is halted.
 
 Provisioning the device
 -----------------------
