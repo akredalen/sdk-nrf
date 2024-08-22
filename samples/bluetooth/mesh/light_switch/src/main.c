@@ -65,5 +65,11 @@ int main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
 
+	err = button_handler_init();
+	if (err) {
+		LOG_ERR("Failed to initialize button handler");
+		return err;
+	}
+
 	return 0;
 }
