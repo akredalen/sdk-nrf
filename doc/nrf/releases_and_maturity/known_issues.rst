@@ -362,13 +362,6 @@ The issues in this section are related to the :ref:`ug_bt_mesh` protocol.
 
 .. rst-class:: v2-9-0-nRF54H20-rc1 v2-9-0 v2-8-0 v2-7-0 v2-6-2 v2-6-1 v2-6-0 v2-5-3 v2-5-2 v2-5-1 v2-5-0 v2-4-4 v2-4-3 v2-4-2 v2-4-1 v2-4-0 v2-3-0 v2-2-0 v2-1-4 v2-1-3 v2-1-2 v2-1-1 v2-1-0 v2-0-2 v2-0-1 v2-0-0
 
-NCSDK-30033: :ref:`bt_mesh_light_ctrl_srv_readme` never resumes the Lightness Controller automatically after it is disabled by a scene recall
-  This occurs when the Lightness Controller is running and a scene recall for a scene with the Lightness Controller disabled is received.
-  Recalling this scene causes the Lightness Controller to stop running.
-  Unlike when setting the Lightness state through other messages, the Lightness Controller will not automatically resume after the time set in the :kconfig:option:`CONFIG_BT_MESH_LIGHT_CTRL_SRV_RESUME_DELAY` Kconfig option.
-
-  **Workaround:** Explicitly re-enable the Lightness Controller using a Lightness Controller client to resume it after it is disabled by a scene recall.
-
 .. rst-class:: v2-8-0 v2-7-0
 
 NCSDK-29893: Adding dynamic names to devices does not work

@@ -115,7 +115,11 @@ Bluetooth® LE
 Bluetooth Mesh
 --------------
 
-|no_changes_yet_note|
+* Updated:
+
+  * The :ref:`bt_mesh_light_ctrl_srv_readme` model to automatically resume the Lightness Controller
+    after recalling a scene. (``NCSDK-30033`` known issue).
+
 
 DECT NR+
 --------
